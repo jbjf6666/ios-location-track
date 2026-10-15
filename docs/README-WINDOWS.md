@@ -1,5 +1,7 @@
 # Windows 版说明（iOS 虚拟定位轨迹工具）
 
+[**中文**](README-WINDOWS.md) | [English](README-WINDOWS.en.md)
+
 > 本文档面向 Windows 用户与维护者。
 > macOS 侧说明见 [README.md](../README.md)；移植决策与背景见 [WINDOWS_PORT.md](WINDOWS_PORT.md)。
 
@@ -7,7 +9,7 @@
 
 ## 1. 三分钟上手
 
-1. 运行 `iOSLocationTrack-1.0.0-setup.exe` 安装，或直接双击绿色版
+1. 运行 `iOSLocationTrack-1.1.0_win-setup.exe` 安装，或直接双击绿色版
    `dist\iOSLocationTrack\iOSLocationTrack.exe`。
 2. **程序会请求管理员权限**（UAC 弹窗点「是」）—— 用于首次自动安装 Apple 驱动。
 3. 弹出**「环境准备」**窗口，逐项列出所需组件：
@@ -183,7 +185,7 @@ Windows 上这样行不通：
 | 文件 | 说明 |
 | --- | --- |
 | `dist\iOSLocationTrack\iOSLocationTrack.exe` | 绿色版 onedir，整个目录一起拷走 |
-| `dist\installer\iOSLocationTrack-1.0.0-setup.exe` | 安装包（Inno Setup 6） |
+| `dist\installer\iOSLocationTrack-1.1.0_win-setup.exe` | 安装包（Inno Setup 6） |
 
 **前置条件：**
 

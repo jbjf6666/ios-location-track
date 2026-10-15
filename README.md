@@ -12,7 +12,7 @@
 > Windows 版：免管理员建立隧道（纯 Python 用户态协议栈，不需要 Wintun 驱动）、
 > 启动时自动检测并安装 Apple Mobile Device Support、带「环境准备」自检窗口。
 > 构建产物：`dist\iOSLocationTrack\iOSLocationTrack.exe` 与
-> `dist\installer\iOSLocationTrack-1.0.0-setup.exe`。
+> `dist\installer\iOSLocationTrack-1.1.0_win-setup.exe`。
 
 ---
 
@@ -20,10 +20,18 @@
 
 ### 方式一：直接下载安装包（推荐）
 
-从 [Releases](https://github.com/jbjf6666/ios-location-track/releases) 下载 `iOSLocationTrack-1.0.0.dmg`：
+从 [Releases](https://github.com/jbjf6666/ios-location-track/releases) 下载对应平台的安装包：
 
-1. 打开 DMG，把 `虚拟定位轨迹.app` 拖进 `Applications`
-2. 首次打开若提示「来自身份不明的开发者」→ 右键 → 打开 → 再点「打开」
+| 平台 | 文件名 | 说明 |
+| --- | --- | --- |
+| **Windows** | `iOSLocationTrack-<版本>_win-setup.exe` | 安装包。也可用绿色版压缩包，解压即用 |
+| **macOS** | `iOSLocationTrack-<版本>_mac.dmg` | 打开 DMG，把 App 拖进 `Applications` |
+
+Windows 版首次启动会请求管理员权限并弹出「环境准备」窗口自动补齐依赖，
+详见 [docs/README-WINDOWS.md](docs/README-WINDOWS.md)。
+
+macOS 版：打开 DMG，把 `虚拟定位轨迹.app` 拖进 `Applications`；首次打开若提示
+「来自身份不明的开发者」→ 右键 → 打开 → 再点「打开」。
 
 **不需要安装 Python、不需要任何依赖**，Python 运行时与全部依赖都已打包在应用内（约 80 MB）。
 数据（配置、瓦片缓存）写到 `~/Library/Application Support/iOSLocationTrack/`。

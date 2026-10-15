@@ -11,7 +11,7 @@ import uuid
 from typing import Any
 
 APP_NAME = "iOS 虚拟定位轨迹工具"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 PROTOCOL_VERSION = "v1"
 
 DEFAULT_HOST = "127.0.0.1"

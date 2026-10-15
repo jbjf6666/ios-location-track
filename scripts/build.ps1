@@ -2,7 +2,7 @@
 #
 # 产出：
 #   dist\iOSLocationTrack\iOSLocationTrack.exe        绿色版（直接双击运行）
-#   dist\installer\iOSLocationTrack-1.0.0-setup.exe   安装包（需要 Inno Setup 6）
+#   dist\installer\iOSLocationTrack-1.1.0_win-setup.exe   安装包（需要 Inno Setup 6）
 #
 # 用法（在项目根目录）：
 #     .\scripts\build.ps1              # 打包 exe + 安装包（若装了 Inno Setup）
@@ -48,6 +48,26 @@ if ($LASTEXITCODE -ne 0) {
     if ($LASTEXITCODE -ne 0) { Write-Fail "构建依赖安装失败"; exit 1 }
 }
 Write-Ok "PyInstaller / Pillow 就绪"
+
+# ---------- 0.5 脚本编码自检（.ps1 必须 UTF-8 with BOM）----------
+# Windows PowerShell 5.1 只有看到 BOM 才按 UTF-8 解析 .ps1；否则按系统 ANSI 代码页读，
+# 结果是中文全部乱码并**直接语法报错**（The string is missing the terminator），脚本根本跑不起来。
+# 不少编辑器/工具保存时会静默丢掉 BOM，所以这里自动补回，避免"改个注释就构建不了"。
+$bomFixed = @()
+foreach ($script in Get-ChildItem (Join-Path $PSScriptRoot '*.ps1')) {
+    $bytes = [System.IO.File]::ReadAllBytes($script.FullName)
+    $hasBom = $bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF
+    if (-not $hasBom) {
+        $text = [System.IO.File]::ReadAllText($script.FullName, [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText($script.FullName, $text, [System.Text.UTF8Encoding]::new($true))
+        $bomFixed += $script.Name
+    }
+}
+if ($bomFixed.Count -gt 0) {
+    Write-Warn "已为下列脚本补回 UTF-8 BOM：$($bomFixed -join '、')（下次编辑请保留 BOM）"
+} else {
+    Write-Ok ".ps1 编码正常（UTF-8 with BOM）"
+}
 
 # ---------- 1. 图标 ----------
 if (-not $SkipIcon) {

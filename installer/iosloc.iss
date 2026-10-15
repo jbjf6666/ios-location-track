@@ -4,7 +4,7 @@
 ;   1) .venv\Scripts\python.exe -m PyInstaller --clean --noconfirm Location.spec
 ;   2) "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\iosloc.iss
 ;
-; 产物：dist\installer\iOSLocationTrack-1.0.0-setup.exe
+; 产物：dist\installer\iOSLocationTrack-1.1.0_win-setup.exe
 ;
 ; 说明：
 ; - 安装包**不包含** Apple 的驱动。程序首次启动时会自动检测 Apple Mobile Device
@@ -14,7 +14,7 @@
 
 #define MyAppName "iOS 虚拟定位轨迹工具"
 #define MyAppNameEn "iOSLocationTrack"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "本地工具"
 #define MyAppExeName "iOSLocationTrack.exe"
 #define DistDir "..\dist\iOSLocationTrack"
@@ -32,7 +32,8 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=..\dist\installer
-OutputBaseFilename={#MyAppNameEn}-{#MyAppVersion}-setup
+; 产物名带 _win 后缀，与 macOS 的 _mac 对应，Release 页面上一眼能分清平台。
+OutputBaseFilename={#MyAppNameEn}-{#MyAppVersion}_win-setup
 SetupIconFile=..\resources\AppIcon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/max

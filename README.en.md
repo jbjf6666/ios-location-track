@@ -13,7 +13,7 @@ The UI is a local web app opened in a Chrome / Edge app window (no address bar �
 > userspace stack — no Wintun driver needed), detects and auto-installs Apple Mobile Device
 > Support on first launch, and shows an environment self-check window.
 > Build outputs: `dist\iOSLocationTrack\iOSLocationTrack.exe` and
-> `dist\installer\iOSLocationTrack-1.0.0-setup.exe`.
+> `dist\installer\iOSLocationTrack-1.1.0_win-setup.exe`.
 
 ---
 
@@ -21,10 +21,19 @@ The UI is a local web app opened in a Chrome / Edge app window (no address bar �
 
 ### Option A — Download the installer (recommended)
 
-Grab `iOSLocationTrack-1.0.0.dmg` from [Releases](https://github.com/jbjf6666/ios-location-track/releases):
+Grab the build for your platform from [Releases](https://github.com/jbjf6666/ios-location-track/releases):
 
-1. Open the DMG and drag `虚拟定位轨迹.app` into `Applications`
-2. If macOS says *"unidentified developer"* on first launch → **right-click → Open → Open**
+| Platform | Filename | Notes |
+| --- | --- | --- |
+| **Windows** | `iOSLocationTrack-<version>_win-setup.exe` | Installer. A portable ZIP is also provided — just unzip and run |
+| **macOS** | `iOSLocationTrack-<version>_mac.dmg` | Open the DMG and drag the app into `Applications` |
+
+On Windows the first launch asks for administrator rights and shows an environment
+self-check window that installs anything missing — see
+[docs/README-WINDOWS.md](docs/README-WINDOWS.md).
+
+macOS: open the DMG and drag `虚拟定位轨迹.app` into `Applications`. If macOS says
+*"unidentified developer"* on first launch → **right-click → Open → Open**.
 
 **No Python, no dependencies** — the Python runtime and every dependency are bundled inside the app (~80 MB).
 Config and tile cache are written to `~/Library/Application Support/iOSLocationTrack/`.

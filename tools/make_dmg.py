@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """把打包好的 .app 制作成可分发的 DMG 安装包。
 
-产物：dist/虚拟定位轨迹-1.0.0.dmg
+产物：dist/iOSLocationTrack-1.1.0_mac.dmg
 内容：应用本身 + Applications 快捷方式（拖进去即安装）+ 中文安装说明
 
 特点：
@@ -25,9 +25,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 APP_NAME = "虚拟定位轨迹"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 APP = ROOT / "dist" / f"{APP_NAME}.app"
-DMG = ROOT / "dist" / f"{APP_NAME}-{VERSION}.dmg"
+# 产物名带 _mac 后缀，与 Windows 的 _win 对应，Release 页面上一眼能分清平台。
+# 用 ASCII 文件名：GitHub Release 会把非 ASCII 字符剥掉（v1.0.0 首次上传时踩过）。
+DMG = ROOT / "dist" / f"iOSLocationTrack-{VERSION}_mac.dmg"
 VOLUME = APP_NAME
 BG_WIDTH, BG_HEIGHT = 600, 400
 
