@@ -36,6 +36,10 @@
 *.yml       text eol=lf
 *.yaml      text eol=lf
 
+# 面向 Windows 用户「直接用记事本打开」的纯文本说明：CRLF + UTF-8 BOM。
+# git 不碰 BOM；这里只锁换行符。（后面的规则覆盖前面的，所以放在 *.txt 之后。）
+使用方法.txt text eol=crlf
+
 # 安装包脚本：CRLF
 *.iss       text eol=crlf
 *.isl       text eol=crlf

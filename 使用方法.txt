@@ -1,0 +1,505 @@
+﻿================================================================================
+  iOS 虚拟定位轨迹工具 — 使用方法
+  iOS Virtual Location & Route Simulator — Usage Guide
+================================================================================
+
+  版本 / Version : 1.1.0
+  平台 / Platform: Windows 10 1809+ · macOS 12+
+  支持 / Support : iOS 17 及以上 / iOS 17 or later
+  仓库 / Repo    : https://github.com/jbjf6666/ios-location-track（免费 / free）
+
+  本文件为纯文本，中英双语：先中文，后英文（英文部分从第 256 行开始）。
+  This is a plain-text bilingual guide: Chinese first, English from line 256.
+
+--------------------------------------------------------------------------------
+  目录 / Contents
+--------------------------------------------------------------------------------
+  1. 这是什么 / What it is
+  2. 安装 / Install
+  3. 第一次启动 / First launch
+  4. 连接 iPhone / Connect your iPhone
+  5. 开始使用 / Basic usage
+  6. 界面功能 / Feature reference
+  7. 数据与日志在哪 / Data & log locations
+  8. 常见问题 / Troubleshooting
+  9. 已知限制 / Known limitations
+
+
+================================================================================
+  第一部分：中文
+================================================================================
+
+--------------------------------------------------------------------------------
+1. 这是什么
+--------------------------------------------------------------------------------
+
+在电脑上给 iPhone / iPad 做「虚拟定位」和「轨迹模拟」的桌面工具。
+
+你可以在地图上画一条路线，加上途经点，然后让手机按真实速度沿着这条路线"跑"起来。
+主要用于测试依赖定位的 App（校园跑、打卡、打车、外卖、运动记录等），不用真的出门。
+
+它不是"破解"类工具：走的完全是 Apple 官方的开发者接口（开发者镜像 + DVT 定位服务），
+和 Xcode 里做定位调试用的是同一套东西。
+
+
+--------------------------------------------------------------------------------
+2. 安装
+--------------------------------------------------------------------------------
+
+【Windows】
+
+  方式一（推荐）：下载 iOSLocationTrack-1.1.0_win-setup.exe
+      双击安装。安装向导是中文的。
+
+  方式二：下载 iOSLocationTrack-1.1.0_win-portable.zip
+      解压到任意目录，双击里面的 iOSLocationTrack.exe 即可，无需安装。
+
+  注意：程序启动时会弹「用户账户控制（UAC）」窗口，需要点「是」。
+        这一步是为了让它能自动安装 Apple 设备驱动（见下一节），
+        虚拟定位本身并不需要管理员权限。
+
+【macOS】
+
+  下载 iOSLocationTrack-1.1.0_mac.dmg → 打开 → 把「虚拟定位轨迹」拖进「应用程序」。
+
+  首次打开若提示「来自身份不明的开发者」（因为没买 Apple 开发者签名）：
+      在应用图标上右键 → 打开 → 再点「打开」。
+      只需做一次，之后正常双击即可。
+
+
+--------------------------------------------------------------------------------
+3. 第一次启动
+--------------------------------------------------------------------------------
+
+【Windows】会先弹出「环境准备」窗口，逐项检查所需的组件：
+
+    ✓ 绿色对勾 = 已就绪，右边按钮显示「已就绪」（不可点）
+    ✗ 红色叉号 = 缺失，右边有可点的「安装 / 下载」按钮
+    · 灰色圆点 = 可选项，没就绪也不影响使用
+
+  必需项一共 6 个，全部变绿后，右下角的「进入程序」按钮才会亮起：
+
+    1) Python 运行时        程序自带，不用管
+    2) pymobiledevice3      程序自带，不用管
+    3) Apple Mobile Device Support
+         Windows 上用来发现 iPhone 的系统服务。缺失时点「安装」，
+         程序会自动下载安装（约 40~200 MB，装完可能提示需要重启电脑）。
+    4) RSD 隧道依赖         程序自带，不用管
+    5) 开发者镜像           约 15 MB，点「下载」自动获取
+    6) 管理员权限           已提权则为绿色
+
+  如果你已经装过 iTunes 或爱思助手，第 3 项通常已经是绿的。
+
+  想跳过这个窗口（依赖都已就绪时）：启动参数加 --no-setup。
+  想用文字版检查：在命令行执行  iOSLocationTrack.exe --check-driver
+
+【macOS】没有这个窗口，直接打开界面。
+
+
+--------------------------------------------------------------------------------
+4. 连接 iPhone
+--------------------------------------------------------------------------------
+
+  1) 用**数据线**把 iPhone 连到电脑（Wi-Fi 连接不稳定，建议用线）
+  2) 解锁手机，屏幕上会弹「要信任此电脑吗？」→ 点「信任」并输入锁屏密码
+  3) 手机上打开：设置 → 隐私与安全性 → 开发者模式 → 打开（会要求重启手机）
+        * iOS 16 及以上必须开这个，否则连不上
+  4) 回到程序界面，点「连接设备」
+
+  连接成功后，界面顶部会显示设备名称和 iOS 版本，状态变成「已连接」。
+
+  耗时参考：实测约 0.8 秒（含隧道建立与开发者会话）。
+
+
+--------------------------------------------------------------------------------
+5. 开始使用
+--------------------------------------------------------------------------------
+
+基本流程就四步：画路线 → 调参数 → 播放 → 停止。
+
+  第 1 步：画路线
+      在地图上依次点击，每点一下加一个点，连成一条线。
+      也可以用「导入 GPX」载入已有的轨迹文件，或直接粘贴经纬度坐标。
+
+  第 2 步：加途经点（可选）
+      想要路线绕行某处时，把某个点设为途经点，程序会重新规划路径
+      （走 OSRM 在线路径规划；离线时退化为直线连接）。
+
+  第 3 步：调参数
+      · 速度倍率：1x 约等于正常步行，调大即加速
+      · 循环播放：跑到终点后自动回到起点继续
+      · 真实感模拟：
+           GPS 漂移     —— 让定位有小幅随机晃动，看起来不像"贴线走"
+           速度抖动     —— 速度上下浮动，避免匀速被识别
+           发送频率     —— 每秒下发几个点，默认 5 Hz
+
+  第 4 步：播放
+      点「播放」，手机定位就开始沿路线移动。地图上会显示进度和剩余时间。
+      随时可以「暂停」「继续」「拖动进度条跳转」。
+
+  结束：点「停止」
+      手机会**立即恢复真实定位**。程序关闭时也会自动恢复，不会把手机"卡"在虚拟位置。
+
+
+--------------------------------------------------------------------------------
+6. 界面功能
+--------------------------------------------------------------------------------
+
+  地图区
+    · 点击加点 / 拖拽调整 / 右键删除
+    · 滚轮缩放，按住拖拽平移
+    · 可切换地图源（高德矢量 / 高德卫星 / Esri 全球卫星 / OSM）
+    · 瓦片会缓存到本地，第二次打开同一区域不用重新下载
+
+  路线区
+    · 显示总距离、预计耗时、点数
+    · 支持 GPX 导入导出
+
+  播放控制
+    · 播放 / 暂停 / 停止 / 循环
+    · 进度条拖动跳转（seek）
+    · 速度倍率 0.5x ~ 10x
+
+  设备区
+    · 设备列表与连接状态
+    · 「挂载开发者镜像」按钮（一般连接时会自动处理）
+    · 「手动 RSD」入口：如果你想用别的工具建的隧道，可以手填地址和端口
+
+  日志区
+    · 实时显示程序在做什么，出问题时先看这里
+
+  模拟模式（无需真机）
+    · 命令行执行  main.py --mock
+    · 界面功能都能用，只是定位不会真的下发到手机，适合先熟悉操作
+
+
+--------------------------------------------------------------------------------
+7. 数据与日志在哪
+--------------------------------------------------------------------------------
+
+  Windows
+    配置 / 瓦片缓存 / 日志    %LOCALAPPDATA%\iOSLocationTrack\
+    程序日志                  %LOCALAPPDATA%\iOSLocationTrack\logs\app.log
+    已下载的安装包            %LOCALAPPDATA%\iOSLocationTrack\installers\
+
+  macOS
+    配置 / 瓦片缓存 / 日志    ~/Library/Application Support/iOSLocationTrack/
+
+  日志是 UTF-8 编码、Tab 分隔（时间 / 级别 / 内容）。
+  用记事本打开即可；若用 PowerShell 5.1 的 Get-Content 看，请加 -Encoding UTF8。
+
+
+--------------------------------------------------------------------------------
+8. 常见问题
+--------------------------------------------------------------------------------
+
+Q: 设备列表是空的，看不到 iPhone
+   依次检查：
+     1) 手机是否已解锁，并点了「信任此电脑」
+     2) 换一根数据线（很多线只能充电不能传数据）
+     3) Windows：环境准备窗口里「Apple Mobile Device Support」是不是绿的？
+        不是绿的，点「安装」。已装但服务停了的话，重启一下电脑往往就好了。
+     4) 手机上「开发者模式」开了吗？
+     5) 关掉爱思助手 / i4Tools / Xcode —— 它们会抢占设备的连接
+
+Q: 点「连接设备」失败，提示隧道建立失败
+   通常是同一时间有别的工具占着设备。把所有同类工具关掉再试。
+   iOS 17+ 的设备同一时刻只允许一条调试连接。
+
+Q: 播放了，但手机定位没动
+     1) 确认手机屏幕上有没有出现定位图标
+     2) 看日志区有没有「已下发 lat=..., lon=...」的输出
+     3) 确认连的是这台手机（设备列表里有没有多台）
+     4) 部分 App 有自己的防作弊逻辑，会忽略系统定位
+
+Q: 提示 "Failed to verify the disk image signature"
+   设备拒绝了开发者镜像的签名。本项目面向 **iOS 17 及以上**；
+   iOS 16 及更早的系统需要用 Apple 按构建号签发的经典镜像，社区镜像会被拒签。
+
+Q: Windows 上装完驱动提示要重启
+   重启电脑再打开程序即可。第一次安装 Apple 驱动时比较常见。
+
+Q: 杀毒软件 / SmartScreen 报警
+   因为程序和安装包没有代码签名证书（买证书要花钱）。
+   点「更多信息」→「仍要运行」即可。想更保险可以自己从源码构建。
+
+Q: 能同时开两个吗？
+   不能。iOS 17+ 的用户态隧道在一个进程里只能有一条，
+   而且设备本身也只允许一条调试连接。请只开一个。
+
+Q: 定位会不会"偷偷"恢复成真实的？
+   Windows 的用户态隧道偶尔会静默断开，断开后手机会自己回到真实定位。
+   程序有保活机制：设了点但没在播放时，每 15 秒重发一次。
+   如果发现定位跳回真实位置，点一次「连接设备」重连即可。
+
+Q: 怎么卸载干净？
+   Windows：控制面板卸载即可。用户数据在 %LOCALAPPDATA%\iOSLocationTrack，
+            不想要可以手动删（卸载程序会保留，方便重装后继续用配置）。
+   macOS ：把 App 拖到废纸篓，再删 ~/Library/Application Support/iOSLocationTrack。
+
+
+--------------------------------------------------------------------------------
+9. 已知限制
+--------------------------------------------------------------------------------
+
+  · 只支持 iOS 17 及以上。iOS 16 及更早不支持（原因见上一节）。
+  · 只能改经纬度。海拔、定位精度、移动速度这些由 iOS 自己合成，
+    无法从外部注入 —— 这是 Apple 接口本身的限制，不是本工具的问题。
+  · 需要联网的地方：挂载开发者镜像时（Apple 在线签名）、
+    在线路径规划、地图瓦片下载。其余全部在本机完成。
+  · 手机必须响应用户操作：解锁、信任、开开发者模式。
+  · 一个进程只能有一条隧道，别双开。
+  · 不要用于任何违法违规用途。请只在你自己的设备上、用于测试你自己开发的 App。
+
+
+================================================================================
+  PART 2: ENGLISH
+================================================================================
+
+--------------------------------------------------------------------------------
+1. What it is
+--------------------------------------------------------------------------------
+
+A desktop tool for **virtual location** and **route simulation** on iPhone / iPad.
+
+Draw a route on a map, add waypoints, and let the phone "travel" along it at realistic
+speed. Built for testing location-dependent apps (running trackers, check-in, ride-hailing,
+delivery, fitness logging) without actually going outside.
+
+This is not a jailbreak or a hack: it uses Apple's own developer interfaces (developer
+disk image + the DVT location service) — the same mechanism Xcode uses for location
+debugging.
+
+
+--------------------------------------------------------------------------------
+2. Install
+--------------------------------------------------------------------------------
+
+[Windows]
+
+  Option A (recommended): download iOSLocationTrack-1.1.0_win-setup.exe and run it.
+
+  Option B: download iOSLocationTrack-1.1.0_win-portable.zip, unzip anywhere and
+            double-click iOSLocationTrack.exe. No installation needed.
+
+  Note: Windows will show a User Account Control (UAC) prompt on launch — click Yes.
+        That is only so the app can auto-install the Apple device driver (see below).
+        Virtual location itself does not require administrator rights.
+
+[macOS]
+
+  Download iOSLocationTrack-1.1.0_mac.dmg, open it, and drag the app into Applications.
+
+  If macOS says "unidentified developer" on first launch (the app is not notarized):
+      right-click the app icon -> Open -> Open.
+      You only need to do this once.
+
+
+--------------------------------------------------------------------------------
+3. First launch
+--------------------------------------------------------------------------------
+
+[Windows] An "Environment Check" window appears, listing every required component:
+
+    Green check  = ready; the button on the right reads "already installed" (disabled)
+    Red cross    = missing; a clickable Install / Download button appears
+    Grey dot     = optional; not required to continue
+
+  Six items are required. The "Enter" button at the bottom-right only becomes
+  clickable once all of them are green:
+
+    1) Python runtime          bundled, nothing to do
+    2) pymobiledevice3         bundled, nothing to do
+    3) Apple Mobile Device Support
+         The Windows service that discovers iPhones. If missing, click Install and
+         the app downloads it automatically (~40-200 MB; may ask for a reboot).
+    4) RSD tunnel dependencies bundled, nothing to do
+    5) Developer disk image    ~15 MB, click Download
+    6) Administrator rights    green if already elevated
+
+  If you already have iTunes or 3uTools installed, item 3 is usually green already.
+
+  To skip the window when everything is ready, pass --no-setup.
+  For a text-mode check, run:  iOSLocationTrack.exe --check-driver
+
+[macOS] There is no such window — the UI opens directly.
+
+
+--------------------------------------------------------------------------------
+4. Connect your iPhone
+--------------------------------------------------------------------------------
+
+  1) Connect the iPhone with a **USB cable** (Wi-Fi works but is less reliable)
+  2) Unlock it. When "Trust This Computer?" appears, tap Trust and enter your passcode
+  3) On the phone: Settings -> Privacy & Security -> Developer Mode -> turn on
+       (it will ask to restart the phone). Required on iOS 16 and later.
+  4) Back in the app, click "Connect device"
+
+  When it succeeds, the device name and iOS version appear at the top of the window
+  and the status becomes "connected".
+
+  Measured time: about 0.8 seconds including tunnel setup and the developer session.
+
+
+--------------------------------------------------------------------------------
+5. Basic usage
+--------------------------------------------------------------------------------
+
+Four steps: draw -> tune -> play -> stop.
+
+  Step 1: Draw a route
+      Click on the map to add points one by one. You can also import a GPX file,
+      or paste latitude/longitude coordinates directly.
+
+  Step 2: Add waypoints (optional)
+      Mark a point as a waypoint to force the route through it; the app re-plans
+      the path (via OSRM online routing, falling back to straight lines offline).
+
+  Step 3: Tune the parameters
+      - Speed multiplier  1x is roughly walking pace; increase to go faster
+      - Loop              restart from the beginning after reaching the end
+      - Realism model
+          GPS drift       small random wander, so movement doesn't look pinned to the line
+          Speed jitter    fluctuates the speed so it isn't suspiciously constant
+          Send rate       how many points per second (default 5 Hz)
+
+  Step 4: Play
+      Click Play and the phone's location starts moving along the route. The map shows
+      progress and remaining time. You can Pause / Resume / drag the seek bar at any time.
+
+  Finishing: click Stop
+      The phone **immediately returns to its real location**. Closing the app also
+      restores it — the phone will never be left stuck at a fake position.
+
+
+--------------------------------------------------------------------------------
+6. Feature reference
+--------------------------------------------------------------------------------
+
+  Map
+    - Click to add points, drag to move, right-click to delete
+    - Scroll to zoom, drag to pan
+    - Switchable tile sources (AMap vector / AMap satellite / Esri imagery / OSM)
+    - Tiles are cached locally, so revisiting an area needs no re-download
+
+  Route
+    - Shows total distance, estimated duration and point count
+    - GPX import / export
+
+  Playback
+    - Play / Pause / Stop / Loop
+    - Seek by dragging the progress bar
+    - Speed multiplier 0.5x - 10x
+
+  Device
+    - Device list and connection state
+    - "Mount developer image" button (normally handled automatically on connect)
+    - "Manual RSD" entry: if you built a tunnel with another tool, enter host and port
+
+  Log
+    - Shows what the app is doing in real time — check this first when something fails
+
+  Mock mode (no device needed)
+    - Run  main.py --mock  from the command line
+    - The whole UI works; locations just aren't sent to a phone. Good for a first look.
+
+
+--------------------------------------------------------------------------------
+7. Where data and logs live
+--------------------------------------------------------------------------------
+
+  Windows
+    Config / tile cache / logs   %LOCALAPPDATA%\iOSLocationTrack\
+    Application log              %LOCALAPPDATA%\iOSLocationTrack\logs\app.log
+    Downloaded installers        %LOCALAPPDATA%\iOSLocationTrack\installers\
+
+  macOS
+    Config / tile cache / logs   ~/Library/Application Support/iOSLocationTrack/
+
+  The log is UTF-8, tab-separated (timestamp / level / message).
+  Notepad opens it fine. If you use PowerShell 5.1, add -Encoding UTF8 to Get-Content.
+
+
+--------------------------------------------------------------------------------
+8. Troubleshooting
+--------------------------------------------------------------------------------
+
+Q: The device list is empty — no iPhone visible
+   Check in order:
+     1) Is the phone unlocked, and did you tap "Trust This Computer"?
+     2) Try another cable (many cables are charge-only, no data lines)
+     3) Windows: is "Apple Mobile Device Support" green in the Environment Check?
+        If not, click Install. If it is installed but the service is stopped,
+        a reboot usually fixes it.
+     4) Is Developer Mode enabled on the phone?
+     5) Close 3uTools / i4Tools / Xcode — they compete for the same device connection
+
+Q: "Connect device" fails with a tunnel error
+   Usually another tool is holding the device. Close every similar tool and retry.
+   An iOS 17+ device only allows one debugging connection at a time.
+
+Q: It is playing but the phone's location doesn't move
+     1) Does the location arrow appear on the phone?
+     2) Does the log show "sent lat=..., lon=..." lines?
+     3) Are you connected to the right phone (is more than one listed)?
+     4) Some apps have their own anti-spoofing and ignore the system location
+
+Q: "Failed to verify the disk image signature"
+   The device rejected the developer image's signature. This project targets
+   **iOS 17 and later**; iOS 16 and earlier need classic images signed by Apple
+   per build number, and community images are rejected.
+
+Q: Windows asks for a reboot after installing the driver
+   Reboot and start the app again. This is common on the first Apple driver install.
+
+Q: Antivirus / SmartScreen warnings
+   The app and installer are not code-signed (certificates cost money).
+   Click "More info" -> "Run anyway". If you prefer, build it yourself from source.
+
+Q: Can I run two instances?
+   No. iOS 17+ allows only one userspace tunnel per process, and the device itself
+   permits only one debugging connection. Run a single instance.
+
+Q: Does the location silently revert to the real one?
+   The Windows userspace tunnel can occasionally drop, after which the phone returns
+   to its real location by itself. The app has a keepalive: when a location is set but
+   playback is stopped, it re-sends every 15 seconds. If you notice a revert, just
+   click "Connect device" again.
+
+Q: How do I uninstall cleanly?
+   Windows: uninstall from Control Panel. User data lives in
+            %LOCALAPPDATA%\iOSLocationTrack and is intentionally kept, so a reinstall
+            retains your config — delete the folder manually if you want it gone.
+   macOS:   drag the app to the Trash, then delete
+            ~/Library/Application Support/iOSLocationTrack.
+
+
+--------------------------------------------------------------------------------
+9. Known limitations
+--------------------------------------------------------------------------------
+
+  - iOS 17 and later only. iOS 16 and earlier are not supported (see above).
+  - Latitude and longitude only. Altitude, horizontal accuracy and speed are synthesized
+    by iOS and cannot be injected from outside — that is a limitation of Apple's
+    interface, not of this tool.
+  - Network is needed for: mounting the developer image (Apple signs it online),
+    online route planning, and map tile downloads. Everything else runs locally.
+  - The phone must cooperate: unlock it, trust the computer, enable Developer Mode.
+  - One tunnel per process — do not run two instances.
+  - Do not use this for anything illegal. Use it only on your own devices, to test
+    apps you are developing.
+
+
+================================================================================
+  链接 / Links
+================================================================================
+  仓库 / Repo     : https://github.com/jbjf6666/ios-location-track
+  下载 / Releases : https://github.com/jbjf6666/ios-location-track/releases
+  Windows 文档    : docs/README-WINDOWS.md（中） / README-WINDOWS.en.md（英）
+  移植与踩坑记录  : docs/WINDOWS_PORT.md
+  协议说明        : docs/PROTOCOL.md
+
+  问题反馈 / Issues:
+  https://github.com/jbjf6666/ios-location-track/issues
+
+================================================================================
