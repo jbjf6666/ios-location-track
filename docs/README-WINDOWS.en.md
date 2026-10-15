@@ -1,6 +1,6 @@
 # Windows Guide — iOS Virtual Location & Route Simulator
 
-[**中文**](README-WINDOWS.md) | [English](README-WINDOWS.en.md)
+[中文](README-WINDOWS.md) | [**English**](README-WINDOWS.en.md)
 
 > This document is for Windows users and maintainers.
 > macOS instructions live in [README.md](../README.md); the porting rationale and
