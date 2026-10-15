@@ -1,0 +1,30 @@
+{
+  "_comment": "瓦片源由服务端 /api/settings/tiles 提供；此文件仅作为前端离线兜底。coord 字段表示瓦片坐标系：gcj02 需要把 WGS84 转成 GCJ-02 后再请求。",
+  "current": "amap",
+  "sources": {
+    "amap": {
+      "name": "高德矢量",
+      "max_zoom": 18,
+      "attribution": "© 高德地图",
+      "datum": "gcj02"
+    },
+    "amap_sat": {
+      "name": "高德卫星",
+      "max_zoom": 18,
+      "attribution": "© 高德地图",
+      "datum": "gcj02"
+    },
+    "tencent": {
+      "name": "腾讯地图",
+      "max_zoom": 18,
+      "attribution": "© 腾讯地图",
+      "datum": "gcj02"
+    },
+    "arcgis_sat": {
+      "name": "全球卫星(Esri)",
+      "max_zoom": 19,
+      "attribution": "Esri, Maxar, Earthstar Geographics",
+      "datum": "wgs84"
+    }
+  }
+}

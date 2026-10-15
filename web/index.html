@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>iOS 虚拟定位 · 轨迹工具</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f81f7'/%3E%3Cpath d='M16 6a6.5 6.5 0 0 0-6.5 6.5C9.5 17.4 16 26 16 26s6.5-8.6 6.5-13.5A6.5 6.5 0 0 0 16 6Zm0 8.8a2.4 2.4 0 1 1 0-4.8 2.4 2.4 0 0 1 0 4.8Z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ===================== 顶部：品牌 + 设备卡片 + 操作 ===================== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>iOS 虚拟定位 · 轨迹工具</h1>
+        <p id="appSubtitle">本地服务未连接</p>
+      </div>
+    </div>
+
+    <div class="device-card" id="deviceCard">
+      <div class="device-empty">正在读取设备信息…</div>
+    </div>
+
+    <div class="top-actions">
+      <span class="pill pill-mute" id="serverInfo">服务端 --</span>
+      <span class="pill pill-err" id="connPill">未连接</span>
+      <button type="button" class="btn" id="btnDevicesRefresh" title="重新扫描 USB / 网络设备">刷新设备</button>
+      <button type="button" class="btn btn-primary" id="btnDeviceConnect" title="建立隧道并连接 DVT 定位服务">连接设备</button>
+      <button type="button" class="btn btn-danger" id="btnDeviceDisconnect" title="释放会话并恢复真实定位">断开</button>
+    </div>
+  </header>
+
+  <!-- ===================== 全局提示条 ===================== -->
+  <div class="banner hidden" id="alertBanner">
+    <span class="banner-icon" aria-hidden="true">!</span>
+    <span class="banner-text" id="bannerText"></span>
+    <button type="button" class="btn btn-small" id="bannerAction">重试</button>
+  </div>
+
+  <!-- ===================== 主体 ===================== -->
+  <main class="workspace" id="workspace">
+
+    <!-- ---------- 左侧：轨迹设置 ---------- -->
+    <aside class="panel panel-left" id="leftPanel">
+      <div class="panel-head">
+        <h2>轨迹设置</h2>
+        <span class="panel-sub" id="routeMeta">未命名轨迹</span>
+      </div>
+
+      <div class="panel-body">
+
+        <section class="block">
+          <label class="block-label">出行模式</label>
+          <div class="seg" id="modeGroup">
+            <button type="button" class="seg-btn is-active" data-mode="driving">驾车</button>
+            <button type="button" class="seg-btn" data-mode="cycling">骑行</button>
+            <button type="button" class="seg-btn" data-mode="walking">步行</button>
+            <button type="button" class="seg-btn" data-mode="flight">飞行</button>
+          </div>
+          <div class="row" style="margin-top:6px">
+            <button type="button" class="btn btn-small" id="btnCampusPreset" title="步行 1.4 m/s、下发 10Hz、漂移 4m、浮动 ±8%、不循环">校园跑预设</button>
+            <button type="button" class="btn btn-small" id="btnMarathonPreset" title="骑行 5.5 m/s、下发 10Hz、漂移 6m、浮动 ±10%">长跑预设</button>
+          </div>
+        </section>
+
+        <section class="block">
+          <div class="row row-between">
+            <label class="block-label" for="jumpCoord">快速定位到坐标 <span class="hint-mini">校园跑：先填学校坐标</span></label>
+          </div>
+          <div class="row">
+            <input type="text" id="jumpCoord" class="input" placeholder="例如 30.2741, 120.1551" title="纬度, 经度（WGS84，逗号或空格分隔）">
+            <button type="button" class="btn btn-small" id="btnJumpCoord">跳转</button>
+          </div>
+          <div class="row" style="margin-top:4px">
+            <button type="button" class="btn btn-small" id="btnSavePlace">记住此地</button>
+            <select id="placeSelect" class="input select" title="已记住的地点">
+              <option value="">（暂无记住的地点）</option>
+            </select>
+            <button type="button" class="btn btn-small" id="btnGoPlace">前往</button>
+          </div>
+          <p class="hint-mini" style="margin:4px 0 0">跳转只是把地图移到该点，方便你在学校范围内画轨迹；不会改变手机定位。</p>
+        </section>
+
+        <section class="block">
+          <div class="row row-between">
+            <label class="block-label" for="speedRange">播放倍速 <span class="hint-mini">0.1x – 50x</span></label>
+            <span class="value-tag" id="speedValue">1.0x</span>
+          </div>
+          <input type="range" id="speedRange" class="range" min="0" max="1000" step="1" value="500" title="0.1x - 50x（指数刻度）">
+          <label class="check">
+            <input type="checkbox" id="loopToggle">
+            <span>循环播放（到达终点后回到起点）</span>
+          </label>
+        </section>
+
+        <section class="block">
+          <div class="row row-between">
+            <label class="block-label">真实感模拟 <span class="hint-mini">校园跑等打卡类测试</span></label>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" id="driftToggle" checked>
+            <span>定位漂移（模拟 GPS 误差缓慢游走）</span>
+          </label>
+          <div class="row row-between">
+            <label class="hint-mini" for="driftRange">漂移半径</label>
+            <span class="value-tag" id="driftValue">4 米</span>
+          </div>
+          <input type="range" id="driftRange" class="range" min="0" max="50" step="1" value="4" title="0 - 50 米">
+
+          <label class="check" style="margin-top:6px">
+            <input type="checkbox" id="jitterToggle" checked>
+            <span>速度浮动（瞬时速度在设定值上下波动）</span>
+          </label>
+          <div class="row row-between">
+            <label class="hint-mini" for="jitterRange">浮动幅度</label>
+            <span class="value-tag" id="jitterValue">±8%</span>
+          </div>
+          <input type="range" id="jitterRange" class="range" min="0" max="60" step="1" value="8" title="0 - 60%">
+
+          <label class="check" style="margin-top:6px">
+            <input type="checkbox" id="timingJitterToggle" checked>
+            <span>发送节奏抖动（真实 GPS 不是精确每秒一次）</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="deriveSpeedToggle" checked>
+            <span>速度由位移推算（与 iOS 的算法一致）</span>
+          </label>
+
+          <label class="check" style="margin-top:6px">
+            <input type="checkbox" id="grossErrorToggle">
+            <span>注入粗差跳点（测自己 App 的过滤逻辑）</span>
+          </label>
+          <div class="row row-between">
+            <label class="hint-mini" for="grossErrorRange">粗差概率</label>
+            <span class="value-tag" id="grossErrorValue">2%</span>
+          </div>
+          <input type="range" id="grossErrorRange" class="range" min="0" max="20" step="1" value="2" title="0 - 20%" disabled>
+
+          <p class="hint-mini" style="margin:6px 0 0">
+            漂移用多尺度噪声（慢漂+中尺度+快抖），沿轨迹平滑游走；发送间隔带 ±15% 抖动与偶发丢采样；
+            上报速度由实际位移÷时间推算，速度/位移/时间三者自洽。
+          </p>
+        </section>
+
+        <section class="block">
+          <label class="block-label">路线概览</label>
+          <div class="stats">
+            <div class="stat"><span class="stat-k">总距离</span><span class="stat-v" id="statDistance">--</span></div>
+            <div class="stat"><span class="stat-k">按速度预计</span><span class="stat-v" id="statDuration">--</span></div>
+            <div class="stat"><span class="stat-k">按倍速播放</span><span class="stat-v" id="statPlayDuration">--</span></div>
+            <div class="stat"><span class="stat-k">路径点数</span><span class="stat-v" id="statPoints">0</span></div>
+            <div class="stat"><span class="stat-k">途经点</span><span class="stat-v" id="statWaypoints">0</span></div>
+            <div class="stat"><span class="stat-k">路线引擎</span><span class="stat-v" id="statEngine">--</span></div>
+          </div>
+        </section>
+
+        <section class="block">
+          <div class="row">
+            <label class="block-label inline" for="routeName">轨迹名称</label>
+            <input type="text" id="routeName" class="input" maxlength="60" placeholder="未命名轨迹">
+          </div>
+        </section>
+
+        <section class="block">
+          <div class="row row-between">
+            <label class="block-label">途经点列表</label>
+            <span class="hint-mini">拖拽排序 · 双击改坐标</span>
+          </div>
+          <div class="wp-list" id="wpList"></div>
+          <div class="wp-empty" id="wpEmpty">还没有途经点：点地图工具条上的「添加途经点」在地图上点选，或导入 GPX。</div>
+        </section>
+
+        <section class="block">
+          <label class="block-label" for="savedRoutes">本地保存的路线</label>
+          <div class="row">
+            <select class="input select" id="savedRoutes"></select>
+            <button type="button" class="btn" id="btnSaveRoute" title="保存到浏览器 localStorage">保存</button>
+            <button type="button" class="btn" id="btnLoadRoute" title="载入所选路线">载入</button>
+            <button type="button" class="btn btn-danger" id="btnDeleteSaved" title="删除所选路线">删除</button>
+          </div>
+        </section>
+
+        <section class="block">
+          <label class="block-label" for="tileSourceSelect">底图</label>
+          <select class="input select" id="tileSourceSelect"></select>
+          <div class="row row-wrap gap-top">
+            <button type="button" class="btn btn-small" id="btnTunnelEnsure" title="iOS 17+ 建立 RSD 隧道（必要时需要管理员权限）">建立隧道</button>
+            <button type="button" class="btn btn-small" id="btnTunnelManual" title="手动填写 RSD 主机与端口">手动 RSD</button>
+            <button type="button" class="btn btn-small" id="btnMountImage" title="给 iOS 设备挂载开发者镜像（DVT 虚拟定位的前提，内置镜像素材）">挂载开发者镜像</button>
+            <button type="button" class="btn btn-small" id="btnTilesClear" title="清理服务端瓦片磁盘缓存并重新拉取">清理瓦片缓存</button>
+          </div>
+          <p class="hint-mini" style="margin:6px 0 0">
+            「挂载开发者镜像」是虚拟定位的前提（iOS 17+ 一般由 Xcode 自动完成）。
+            应用内置了 iOS 17–27.x 全系共用的镜像素材，无需联网下载；签名由 Apple 在线签发。
+            点击后过程实时输出到右侧运行日志。<b>仅支持 iOS 17 及以上</b>。
+          </p>
+        </section>
+
+        <section class="block block-muted">
+          <label class="block-label">快捷键</label>
+          <div class="keys">
+            <span><kbd>空格</kbd> 播放 / 暂停</span>
+            <span><kbd>Esc</kbd> 结束折线绘制</span>
+            <span><kbd>Del</kbd> 删除选中点</span>
+            <span><kbd>双击</kbd> 放大 / 结束绘制</span>
+          </div>
+        </section>
+
+        <!-- 固定操作条：始终可见的主操作 -->
+        <section class="actions-sticky">
+          <button type="button" class="btn btn-primary btn-block" id="btnBuildRoute">加载 OSRM 路线</button>
+          <div class="btn-grid">
+            <button type="button" class="btn" id="btnClear">清空</button>
+            <button type="button" class="btn" id="btnExportGpx">导出 GPX</button>
+            <button type="button" class="btn" id="btnImportGpx">导入 GPX</button>
+            <button type="button" class="btn" id="btnClearLocation">恢复真实定位</button>
+          </div>
+        </section>
+
+      </div>
+    </aside>
+
+    <!-- ---------- 中间：地图 ---------- -->
+    <section class="map-area" id="mapArea">
+      <div class="map-toolbar" id="drawToolbar">
+        <button type="button" class="tool-btn is-active" id="toolSelect" data-tool="select" title="选择 / 拖拽途经点">选择</button>
+        <button type="button" class="tool-btn" id="toolAdd" data-tool="add" title="在地图上点击添加途经点">添加途经点</button>
+        <button type="button" class="tool-btn" id="toolPolyline" data-tool="polyline" title="连续点击加点，双击或 Esc 结束">折线绘制</button>
+        <span class="tool-sep"></span>
+        <button type="button" class="tool-btn" id="toolUndo" title="撤销上一步">撤销</button>
+        <button type="button" class="tool-btn" id="toolDelete" title="删除选中的途经点">删除选中点</button>
+        <button type="button" class="tool-btn" id="toolFit" title="缩放至完整轨迹">全览</button>
+        <span class="tool-hint" id="toolHint">拖拽平移 · 滚轮缩放</span>
+      </div>
+
+      <div class="map-chips" id="mapChips">
+        <span class="chip" id="chipPlayState">未播放</span>
+        <span class="chip" id="chipProgress">进度 0%</span>
+        <span class="chip" id="chipSpeed">速度 --</span>
+        <span class="chip" id="chipCoord">--</span>
+        <span class="chip chip-mute" id="chipTrack">轨迹点 0</span>
+      </div>
+
+      <div id="map" class="map-host"></div>
+    </section>
+
+    <!-- ---------- 右侧：日志 ---------- -->
+    <aside class="panel panel-right" id="logPanel">
+      <div class="panel-head log-head">
+        <h2 class="log-title">运行日志</h2>
+        <span class="panel-sub" id="logCount">0 / 300</span>
+        <div class="log-actions">
+          <button type="button" class="btn btn-small" id="btnFetchLogs" title="向服务端拉取最近 200 条日志">拉取</button>
+          <button type="button" class="btn btn-small" id="btnClearLog">清空</button>
+          <button type="button" class="btn btn-small" id="btnToggleLog" title="折叠 / 展开日志面板">折叠</button>
+        </div>
+      </div>
+      <div class="log-body" id="logBody"></div>
+      <div class="log-collapsed-label" id="logCollapsedLabel">运 行 日 志</div>
+    </aside>
+
+  </main>
+
+  <!-- ===================== 底部播放条 ===================== -->
+  <footer class="playbar">
+    <div class="transport">
+      <button type="button" class="tbtn tbtn-play" id="btnPlay" title="开始播放">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13l11-6.5-11-6.5Z"/></svg>
+        <span>播放</span>
+      </button>
+      <button type="button" class="tbtn" id="btnPause" title="暂停" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 5h3.5v14H7V5Zm6.5 0H17v14h-3.5V5Z"/></svg>
+        <span>暂停</span>
+      </button>
+      <button type="button" class="tbtn" id="btnResume" title="继续" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 5.5v13l10-6.5-10-6.5Zm12 0h2v13h-2v-13Z"/></svg>
+        <span>继续</span>
+      </button>
+      <button type="button" class="tbtn tbtn-stop" id="btnStop" title="停止播放并恢复真实定位" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 6h12v12H6z"/></svg>
+        <span>停止</span>
+      </button>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-top">
+        <span class="play-state" id="playStateText">未播放</span>
+        <span class="progress-num" id="liveProgress">0.0%</span>
+      </div>
+      <input type="range" id="progressRange" class="range range-progress" min="0" max="1000" step="1" value="0">
+      <div class="progress-times">
+        <span>已用 <b id="timeElapsed">00:00</b></span>
+        <span>剩余 <b id="timeRemaining">00:00</b></span>
+        <span>序号 <b id="liveIndex">0 / 0</b></span>
+      </div>
+    </div>
+
+    <div class="live-stats">
+      <div class="live"><span class="live-k">实时速度</span><span class="live-v" id="liveSpeed">--</span></div>
+      <div class="live"><span class="live-k">当前坐标</span><span class="live-v live-v-mono" id="liveCoord">--</span></div>
+      <div class="live"><span class="live-k">倍速</span><span class="live-v" id="liveScale">1.0x</span></div>
+    </div>
+  </footer>
+</div>
+
+<!-- ===================== 弹窗 / 提示 ===================== -->
+<div class="modal-mask hidden" id="modalMask">
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="modalTitle">提示</h3>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="modalCancel">取消</button>
+      <button type="button" class="btn btn-primary" id="modalOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<input type="file" id="gpxFile" accept=".gpx,.xml,application/gpx+xml,text/xml" hidden>
+
+<script src="js/coord.js"></script>
+<script src="js/ws.js"></script>
+<script src="js/map.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

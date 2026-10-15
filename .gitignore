@@ -1,0 +1,41 @@
+# ---- Python / 虚拟环境 ----
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ---- 打包产物（可用 scripts/build_app.sh 重新生成）----
+build/
+dist/
+*.spec.bak
+*.dmg
+*.app/
+
+# ---- 运行时下载的镜像素材（体积大，用 tools/fetch_ddi.py 获取）----
+# BuildManifest.plist 与 trustcache 已入库（体积小），只有 15MB 的镜像本体不入库
+resources/ddi/**/Image.dmg
+resources/ddi/**/DeveloperDiskImage.dmg
+resources/ddi/**/DeveloperDiskImage.dmg.signature
+
+# ---- 运行时数据（含本机设备信息与缓存）----
+config.json
+.tunnel.pids
+tiles_cache/
+*.log
+logs/
+
+# ---- macOS ----
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# ---- 编辑器 ----
+.idea/
+.vscode/
+*.swp
+
+# ---- 本机私有备注（如不想公开可取消注释）----
+# docs/DEVICE_NOTES.md
