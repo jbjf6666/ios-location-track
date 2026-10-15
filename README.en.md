@@ -258,6 +258,9 @@ Packaging helpers:
 - **Routing**: prefers OSRM real roads (`router.project-osrm.org`); falls back to a straight line offline and labels the engine type on the map.
 - **Standalone packaging**: PyInstaller onedir + ad-hoc signature. Tunnel establishment uses **self-invocation** (`<app binary> tunnel-helper`), so the packaged app needs no Python on the machine.
 - **Protocol**: see [docs/PROTOCOL.md](docs/PROTOCOL.md).
+- **Windows port**: see [docs/WINDOWS_PORT.md](docs/WINDOWS_PORT.md) (portability audit, tunnel
+  replacement, packaging changes, acceptance baseline). Roughly 90% of the core logic is reusable;
+  only tunnel establishment and the distribution pipeline need rewriting. (Written in Chinese.)
 
 ---
 

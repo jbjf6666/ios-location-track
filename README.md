@@ -261,6 +261,8 @@ iOS 17 起，虚拟定位服务不再走 usbmux，必须先建立 **RSD 隧道**
 - **路线**：优先 OSRM 真实路网（`router.project-osrm.org`），无网络时退化为直线并在地图上标注引擎类型。
 - **独立打包**：PyInstaller onedir + ad-hoc 签名。隧道建立通过「自调用」实现（`<应用自身> tunnel-helper`），因此打包后不需要机器上有 Python。
 - **接口契约**：见 [docs/PROTOCOL.md](docs/PROTOCOL.md)。
+- **Windows 移植**：见 [docs/WINDOWS_PORT.md](docs/WINDOWS_PORT.md)（可移植性审计、隧道方案替换、
+  打包链路改造、验收基线）。核心逻辑层约 90% 可直接复用，只有隧道建立与分发链路需重写。
 
 ---
 
