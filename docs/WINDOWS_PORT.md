@@ -417,3 +417,45 @@ python main.py --mock             # 界面能开、能画轨迹、能播放（�
 - pymobiledevice3 文档：https://github.com/doronz88/pymobiledevice3
 - userspace 隧道源码：`pymobiledevice3/remote/userspace_tunnel.py`
 - 开发者镜像素材来源：https://github.com/doronz88/DeveloperDiskImage
+
+---
+
+## 11. ⚠️ 移植完成后的修正（**先读这一节**）
+
+以下是 Windows 侧**实际动手后**发现本文档有误的地方。上文保留原样以便对照，
+但**以本节为准**。详细说明见 [`README-WINDOWS.md`](README-WINDOWS.md)。
+
+| # | 本文档原文 | 实际情况 |
+| --- | --- | --- |
+| 1 | §3.3 说 `userspace_tunnel.UserspaceTunnel.aopen()` | **类名不存在**，正确是 `UserspaceRsdTunnel`。§3.4 已改对，§3.3 的正文漏改。 |
+| 2 | §8 第 1 步让跑 `remote start-tunnel --userspace` | **该命令没有 `--userspace` 选项**。实测 `lockdown start-tunnel --userspace` 在 Windows 上会以 `Connection was terminated abruptly` 失败。**正解是 Python API**：`UserspaceRsdTunnel(...).aopen()`。 |
+| 3 | §2 / §8 把 **Wintun 驱动**列为必需前置 | **完全不需要**。userspace 隧道走纯 Python PyTCP 协议栈，不建内核网卡；而且 `pytun_pmd3` 依赖里**自带** `wintun/bin/amd64/wintun.dll`。无需下载、无需安装、无需管理员权限。 |
+| 4 | §3.3 问「是否需要管理员权限 / 防火墙弹窗 / 网卡残留」 | 实测：**都不需要**。免管理员、无防火墙弹窗、无虚拟网卡（因此也没有残留问题）。隧道建立约 **0.3 秒**。 |
+| 5 | §3.4 说「保持公开接口不变，只替换 `_build_command()`」 | **不够**。`core/tunnel.py` 还有一批 POSIX-only 代码：`os.killpg`/`os.getpgid`、`start_new_session=True`、`ps -p`、`osascript`、`.venv/bin/python`、`~/Library/Application Support`。这些已全部收进 `core/platform.py`。 |
+| 6 | §3.4 建议 Windows 沿用「隧道助手子进程 + 解析 HOST PORT」 | **架构上行不通**。用户态隧道的设备地址**只在建立它的进程里可达**；拿 `(host, port)` 另建 RSD 会得到 `OSError [WinError 1231] 网络位置不可达`。必须把 `aopen()` 返回的 **rsd 对象本身**注入 DVT 层。 |
+| 7 | §5.3 只提到别排除 `distutils` | **`wheel` 同理**：Windows + setuptools 84 上会报 `ValueError: Target module "wheel" already imported as ExcludedModule('wheel',)`。`setuptools` / `pip` 也建议一并保留。 |
+| 8 | §1 说 `drift_sim.py` 等「纯逻辑，跨平台」 | `drift_sim.py` 与 `offline_tiles.py` **硬编码了 `/tmp/...`**。Windows 上虽然会落到 `C:\tmp`（有权限时能跑），但已改为 `tempfile.gettempdir()`。 |
+| 9 | §1 称 `resources/ddi/` 是「16 MB 可移植」 | 实际入库的只有 `BuildManifest.plist` + 两个 trustcache（约 0.8 MB）；**`Image.dmg`（15.7 MB）被 `.gitignore` 排除**，新克隆必须跑 `tools/fetch_ddi.py`。已加进 `scripts\run.ps1` / `build.ps1` 自动补齐。 |
+| 10 | §4.4 建议「删掉 `tools/make_dmg.py`、把 `run.sh` 改写成 `.ps1`」 | **没有删**。改成新增 `run.ps1` / `build.ps1` + `Location.spec` 平台分支，**单一份代码库两个平台都能构建**，避免分叉（§9.5 的目标）。 |
+
+### 实测环境与结果
+
+Windows 11 x64（10.0.26200）· Python 3.12.14 · pymobiledevice3 11.31.0 ·
+iPhone 11（`iPhone12,1`）**iOS 26.6.1** · AMDS 20.0.0.35 · iTunes 12.13.11.1
+
+- 隧道 → 镜像 → DVT → 下发定位 → 恢复真实定位：**全链路跑通**，连接耗时 0.8 秒
+- `tests/selftest.py` 83/83、`drift_sim.py` 40/40、`offline_tiles.py` 13/13
+- 新增真机验收：`tests/win_e2e.py` **7/7**、`tests/win_app_e2e.py` **9/9**
+- 打包版 exe 实测：发现设备 → 0.3s 隧道 → DVT → 两次下发 → 恢复真实定位 → 干净退出
+
+### 新增的 Windows 专属能力（本文档未提及）
+
+1. **「环境准备」窗口**（每次启动弹出）：逐项列出依赖，缺失项右侧有「安装」按钮，
+   必需项全部就绪后「进入程序」才可点。
+2. **自动安装 Apple Mobile Device Support**：服务启动 → 独立 AMDS MSI → 完整 iTunes 包 → winget，
+   逐级降级；成功码 `0/3010/1641/1638`。
+3. **exe 清单写入 `requireAdministrator`**（`Location.spec` 的 `uac_admin=True`），启动即提权。
+4. **保活机制**：隧道会静默断开并让设备偷偷恢复真实定位，因此设了点但停止播放时
+   每 15 秒重发一次（`core/location_provider.py:KEEPALIVE_INTERVAL`）。
+5. **日志落盘**：窗口程序没有控制台，日志写到
+   `%LOCALAPPDATA%\iOSLocationTrack\logs\app.log`。

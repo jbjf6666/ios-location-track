@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
@@ -37,7 +38,7 @@ def check(name: str, ok: bool, detail: str = "") -> None:
 
 def main() -> int:
     print("\033[1m瓦片本地缓存 / 离线可用验证\033[0m")
-    cache_dir = Path("/tmp/iosloc-offline-tiles")
+    cache_dir = Path(tempfile.gettempdir()) / "iosloc-offline-tiles"
     import shutil
 
     shutil.rmtree(cache_dir, ignore_errors=True)

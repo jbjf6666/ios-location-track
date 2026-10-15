@@ -39,6 +39,8 @@ import logging
 import time
 from typing import Any, Callable, Optional
 
+from . import platform as plat
+
 __all__ = [
     "RealLocationProvider",
     "LocationProviderError",
@@ -48,22 +50,37 @@ __all__ = [
 
 logger = logging.getLogger("iosloc.location.real")
 
+#: 保活重发间隔（秒）。参考同类工具经验：<3s 没有额外收益，还容易在隧道里堆积消息。
+KEEPALIVE_INTERVAL = 15.0
+
+#: 当前平台的解释器路径 / 启动脚本（错误文案里直接给用户可粘贴的命令）
+_PY = ".venv\\Scripts\\python.exe" if plat.IS_WINDOWS else "./.venv/bin/python"
+_RUN = ".\\scripts\\run.ps1" if plat.IS_WINDOWS else "./run.sh"
+
 #: 未安装 pymobiledevice3 时的中文修复建议（含本机实测可用的阿里云镜像）
 PMD3_MISSING_HINT = (
     "未检测到 pymobiledevice3 库。请在项目目录执行："
-    "./.venv/bin/python -m pip install --index-url https://mirrors.aliyun.com/pypi/simple/ pymobiledevice3"
+    f"{_PY} -m pip install --index-url https://mirrors.aliyun.com/pypi/simple/ pymobiledevice3"
 )
 
 #: iOS 17 是「必须走 RSD 隧道」的分界线
 RSD_REQUIRED_IOS_MAJOR = 17
 
-#: 根目录 README/run.sh 的隧道提示（PROTOCOL.md 的 tunnel_hint 语义）
-TUNNEL_HINT = (
-    "iOS 17 及以上必须先用 RSD 隧道才能使用 DVT 虚拟定位："
-    "请以管理员权限运行 run.sh（sudo ./run.sh）；"
-    "macOS 上也可用免 root 的隧道："
-    "./.venv/bin/python -m pymobiledevice3 remote start-tunnel --native --script-mode"
-)
+#: 隧道提示（PROTOCOL.md 的 tunnel_hint 语义）。两个平台的建立方式不同，文案必须分开：
+#: macOS 借 Apple remoted（--native，免 root）；Windows 用 userspace 隧道（免管理员）。
+if plat.IS_WINDOWS:
+    TUNNEL_HINT = (
+        "iOS 17 及以上必须先用 RSD 隧道才能使用 DVT 虚拟定位。"
+        "本程序会自动建立 userspace 隧道（不需要管理员权限）；若失败请重新运行 "
+        f"{_RUN} 并查看日志。也请确认已关闭爱思助手等会抢占 RSD 连接的工具。"
+    )
+else:
+    TUNNEL_HINT = (
+        "iOS 17 及以上必须先用 RSD 隧道才能使用 DVT 虚拟定位："
+        "请以管理员权限运行 run.sh（sudo ./run.sh）；"
+        "macOS 上也可用免 root 的隧道："
+        "./.venv/bin/python -m pymobiledevice3 remote start-tunnel --native --script-mode"
+    )
 
 
 class LocationProviderError(RuntimeError):
@@ -174,14 +191,14 @@ def _wrap(action: str, exc: BaseException) -> LocationProviderError:
     elif "developerdiskimage" in low or "developer disk image" in low or "mounter mount" in low:
         detail = (
             "设备未挂载开发者镜像（DeveloperDiskImage），DVT 服务不可用。"
-            "请执行：./.venv/bin/python -m pymobiledevice3 mounter auto-mount"
+            f"请执行：{_PY} -m pymobiledevice3 mounter auto-mount"
         )
     elif "developer mode" in low or "developermode" in low:
         detail = "设备未开启「开发者模式」：设置 → 隐私与安全性 → 开发者模式（需重启设备）"
     elif "invalidservice" in low or "no such service" in low or "startserviceerror" in low:
         detail = (
             "设备未提供所需的开发者服务。iOS<17 通常是尚未挂载开发者镜像，请执行："
-            "./.venv/bin/python -m pymobiledevice3 mounter auto-mount；"
+            f"{_PY} -m pymobiledevice3 mounter auto-mount；"
             "iOS 17+ 则需要 RSD 隧道（隧道提示见下）"
         )
     elif "not paired" in low or "notpaired" in low or "pair" in low and "invalid" in low:
@@ -249,6 +266,10 @@ class RealLocationProvider:
         self._session_info: dict = {}
         self._last_location: Optional[tuple] = None
         self._send_count = 0
+        #: 保活：最后一次成功下发的单调时间 + 后台任务
+        self._last_send_mono = 0.0
+        self._keepalive_task: Optional[asyncio.Task] = None
+        self._keepalive_count = 0
         self._connected_at: Optional[float] = None
 
         # pymobiledevice3 对象
@@ -325,8 +346,8 @@ class RealLocationProvider:
 
         if state in ("unpaired",):
             raise LocationProviderError(
-                "设备未与此电脑配对：请在 iPhone 上点击「信任此电脑」后重试（或执行 "
-                "./.venv/bin/python -m pymobiledevice3 lockdown pair）"
+                f"设备未与此电脑配对：请在 iPhone 上点击「信任此电脑」后重试（或执行 "
+                f"{_PY} -m pymobiledevice3 lockdown pair）"
             )
         if state in ("unavailable",):
             raise LocationProviderError("设备当前不可用：请重新插拔 USB 线并解锁 iPhone 后重试")
@@ -353,6 +374,8 @@ class RealLocationProvider:
 
         self._connected = True
         self._connected_at = time.time()
+        # 会话建立后启动保活（见 _keepalive_loop 的说明）
+        self._start_keepalive()
         self._session_info = {
             "ok": True,
             "mock": False,
@@ -534,8 +557,61 @@ class RealLocationProvider:
 
         self._last_location = (lat, lon)
         self._send_count += 1
+        self._last_send_mono = time.monotonic()
         if self._send_count == 1 or self._send_count % 25 == 0:
             self._log("debug", f"已下发 lat={lat:.6f}, lon={lon:.6f}（第 {self._send_count} 次）")
+
+    # ------------------------------------------------------------------ 保活
+    async def _keepalive_loop(self) -> None:
+        """定期重发最后一个点，防止"隧道静默断开后设备偷偷恢复真实定位"。
+
+        为什么需要：Windows 的 userspace 隧道是纯 Python 用户态协议栈，实测会**静默断开**
+        —— 断开后设备自己恢复真实定位，而界面看起来一切正常（同类工具
+        fake-location-cli 也独立踩到了这个坑，其 flc_set.py 里明确记录了这一点）。
+        播放时每秒都在下发，不会触发；主要是「设了点但暂停/静止」时的保险。
+        """
+        try:
+            while self._connected:
+                await asyncio.sleep(KEEPALIVE_INTERVAL)
+                target = self._last_location
+                if target is None or not self._connected:
+                    continue
+                # 播放引擎刚发过就不重复发，避免和播放线程抢通道
+                if time.monotonic() - self._last_send_mono < KEEPALIVE_INTERVAL * 0.8:
+                    continue
+                try:
+                    if self._strategy in ("dvt-rsd", "dvt-lockdown"):
+                        await self._location.set(target[0], target[1])
+                    elif self._strategy == "legacy":
+                        await self._legacy.set(target[0], target[1])
+                    else:
+                        continue
+                    self._last_send_mono = time.monotonic()
+                    self._keepalive_count += 1
+                    self._log("debug",
+                              f"保活重发 lat={target[0]:.6f}, lon={target[1]:.6f}"
+                              f"（第 {self._keepalive_count} 次）")
+                except Exception as exc:
+                    # 不抛出去：保活失败不应打断播放，但要留下痕迹供排查
+                    self._log("warning", f"保活重发失败（隧道可能已断开）：{exc}")
+        except asyncio.CancelledError:
+            return
+
+    def _start_keepalive(self) -> None:
+        if self._keepalive_task is not None and not self._keepalive_task.done():
+            return
+        try:
+            self._keepalive_task = asyncio.get_running_loop().create_task(
+                self._keepalive_loop(), name="location-keepalive"
+            )
+        except RuntimeError:
+            self._keepalive_task = None
+
+    def _stop_keepalive(self) -> None:
+        task = self._keepalive_task
+        self._keepalive_task = None
+        if task is not None and not task.done():
+            task.cancel()
 
     async def clear_location(self) -> None:
         """让设备恢复真实定位（``play.stop`` / ``location.clear`` 语义）。"""
@@ -550,10 +626,13 @@ class RealLocationProvider:
         except BaseException as exc:
             raise _wrap("清除虚拟定位", exc) from exc
         self._last_location = None
+        self._last_send_mono = 0.0
+        self._stop_keepalive()
         self._log("info", "已清除虚拟定位，设备恢复真实定位")
 
     async def close(self) -> None:
         """释放会话：先 clear（恢复真实定位）再关闭 DVT / RSD / lockdown。幂等。"""
+        self._stop_keepalive()
         if not self._connected and self._dvt is None and self._rsd_obj is None and self._lockdown_obj is None:
             return
         try:

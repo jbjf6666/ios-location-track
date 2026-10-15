@@ -1,12 +1,18 @@
-# iOS 虚拟定位轨迹工具（macOS）
+# iOS 虚拟定位轨迹工具（macOS / Windows）
 
 [**中文**](README.md) | [English](README.en.md)
 
-在 Mac 上给 iPhone / iPad 做**虚拟定位**与**轨迹模拟**的桌面工具：在地图上绘制路线、添加途经点、按真实速度沿轨迹驱动手机定位。
+在电脑上给 iPhone / iPad 做**虚拟定位**与**轨迹模拟**的桌面工具：在地图上绘制路线、添加途经点、按真实速度沿轨迹驱动手机定位。
 
 支持 **iOS 17 ~ iOS 27.2**（RSD 隧道 + DVT `SimulateLocation`），应用内内置了全系共用的开发者镜像素材，**不需要安装 Python 环境**。
 
 界面为本机网页应用，用 Chrome / Edge 的应用窗口打开（无地址栏，像原生 App），也可以直接用浏览器访问 `http://127.0.0.1:8787`。地图、轨迹、播放引擎、设备通信全部在本机完成，只有地图瓦片和（可选的）路线规划需要联网。
+
+> **Windows 用户请看 [docs/README-WINDOWS.md](docs/README-WINDOWS.md)**。
+> Windows 版：免管理员建立隧道（纯 Python 用户态协议栈，不需要 Wintun 驱动）、
+> 启动时自动检测并安装 Apple Mobile Device Support、带「环境准备」自检窗口。
+> 构建产物：`dist\iOSLocationTrack\iOSLocationTrack.exe` 与
+> `dist\installer\iOSLocationTrack-1.0.0-setup.exe`。
 
 ---
 

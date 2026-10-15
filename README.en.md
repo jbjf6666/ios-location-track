@@ -1,12 +1,19 @@
-# iOS Virtual Location & Route Simulator (macOS)
+# iOS Virtual Location & Route Simulator (macOS / Windows)
 
 [中文](README.md) | [**English**](README.en.md)
 
-A desktop tool for **virtual location** and **route simulation** on iPhone / iPad from a Mac: draw a route on the map, add waypoints, and drive the device's location along it at realistic speeds.
+A desktop tool for **virtual location** and **route simulation** on iPhone / iPad: draw a route on the map, add waypoints, and drive the device's location along it at realistic speeds.
 
 Supports **iOS 17 – iOS 27.2** (RSD tunnel + DVT `SimulateLocation`). The developer disk image assets are bundled inside the app, so **no Python installation is required**.
 
 The UI is a local web app opened in a Chrome / Edge app window (no address bar — looks like a native app). You can also just open `http://127.0.0.1:8787` in a browser. The map, route engine, playback engine, and device communication all run locally; only map tiles and optional route planning need network access.
+
+> **Windows users: see [docs/README-WINDOWS.md](docs/README-WINDOWS.md).**
+> The Windows build establishes the tunnel **without administrator rights** (pure-Python
+> userspace stack — no Wintun driver needed), detects and auto-installs Apple Mobile Device
+> Support on first launch, and shows an environment self-check window.
+> Build outputs: `dist\iOSLocationTrack\iOSLocationTrack.exe` and
+> `dist\installer\iOSLocationTrack-1.0.0-setup.exe`.
 
 ---
 

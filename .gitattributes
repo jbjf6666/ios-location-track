@@ -1,0 +1,57 @@
+# 统一换行符，避免 Windows 与 macOS 互相污染。
+#
+# 背景：本仓库现在同时支持 macOS 与 Windows。
+# Windows 上 core.autocrlf=true 时，若没有本文件，Shell 脚本会被写成 CRLF ——
+# 而 CRLF 的 .sh 在 macOS/Linux 上会直接报
+#   `bad interpreter: /bin/bash^M: no such file or directory`
+# 反过来，PowerShell 脚本写成 LF 虽然多数情况能跑，但保持一致更省事。
+#
+# 注意：本文件**只影响之后新增/修改的文件**，不会重写历史。不要执行
+# `git add --renormalize .`，那会把整个仓库的换行符翻一遍，产生巨大无意义 diff。
+
+# 默认：交给 git 自动判断，并在仓库里统一存成 LF
+* text=auto
+
+# 本文件自身
+.gitattributes text eol=lf
+
+# Shell 脚本必须 LF（macOS / Linux 直接执行）
+*.sh        text eol=lf
+*.bash      text eol=lf
+
+# PowerShell 脚本用 CRLF（Windows PowerShell 5.1 的习惯）
+# ⚠️ scripts/*.ps1 是 **UTF-8 with BOM**：PowerShell 5.1 只有看到 BOM 才按 UTF-8
+#    解析，否则会按系统 ANSI 代码页读，中文乱码并直接语法报错。
+#    编辑这两个文件时务必保留 BOM。git 不会动 BOM，这里只锁换行符。
+*.ps1       text eol=crlf
+
+# Python / 前端 / 文档：LF
+*.py        text eol=lf
+*.js        text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.txt       text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+
+# 安装包脚本：CRLF
+*.iss       text eol=crlf
+*.isl       text eol=crlf
+*.nsi       text eol=crlf
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# 二进制：不要做任何换行转换
+*.icns      binary
+*.ico       binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.dmg       binary
+*.dll       binary
+*.exe       binary
+*.zip       binary
+*.plist     binary
+*.trustcache binary

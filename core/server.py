@@ -85,8 +85,12 @@ class AsyncRunner:
 class App:
     """应用装配：配置、设备、隧道、定位会话、路由、播放、瓦片、日志。"""
 
-    def __init__(self, root: Path, mock: bool = False, port: int = protocol.DEFAULT_PORT) -> None:
+    def __init__(self, root: Path, mock: bool = False, port: int = protocol.DEFAULT_PORT,
+                 resources: Path | str | None = None) -> None:
+        # root = 可写数据目录（打包后是 %LOCALAPPDATA%\\iOSLocationTrack）
+        # resources = 只读资源目录（打包后是 PyInstaller 解包目录），默认与 root 相同
         self.root = Path(root)
+        self.resources = Path(resources) if resources is not None else self.root
         self.mock = mock
         self.port = port
         self.host = protocol.DEFAULT_HOST
@@ -100,13 +104,18 @@ class App:
                 pass
         self.runner = AsyncRunner()
         self.hub = ws.Hub()
-        self.tunnel = tunnel_mod.TunnelManager(log=self.log, on_change=self._on_tunnel_change)
+        # Windows 的 userspace 隧道必须建在应用自己的事件循环上（地址仅本进程可达），
+        # 因此把 runner 注入 TunnelManager；macOS 只用它做子进程管理，传了也无害。
+        self.tunnel = tunnel_mod.TunnelManager(
+            log=self.log, on_change=self._on_tunnel_change, runner=self.runner
+        )
         self.devices = device_mod.DeviceManager(mock=mock, on_change=self._on_devices_change)
         self.routes = route_engine.RouteEngine(self.config)
         self.tiles = tilecache.TileCache(
             self.config.cache_dir(), int(self.config.get("tile_cache_max_mb") or 1024)
         )
         self.logs: deque[dict[str, Any]] = deque(maxlen=500)
+        self._log_file = self._open_log_file()
         self._lock = threading.RLock()
         self.provider: Any = None
         self.provider_udid: str | None = None
@@ -126,10 +135,27 @@ class App:
         self._mount_running = False
 
     # ---------------- 日志 ----------------
+    def _open_log_file(self):
+        """打包成窗口程序后没有控制台，日志必须落盘，否则出问题无从排查。"""
+        try:
+            directory = self.root / "logs"
+            directory.mkdir(parents=True, exist_ok=True)
+            handle = open(directory / "app.log", "a", encoding="utf-8")
+            return handle
+        except Exception:
+            return None
+
     def log(self, level: str, message: str) -> None:
         entry = {"ts": protocol.now_ts(), "level": level, "msg": str(message)}
         self.logs.append(entry)
         self.hub.broadcast({"type": "log", **entry})
+        handle = getattr(self, "_log_file", None)
+        if handle is not None:
+            try:
+                handle.write(f"{entry['ts']}\t{level}\t{message}\n")
+                handle.flush()
+            except Exception:
+                pass
 
     def recent_logs(self, limit: int = 200) -> list[dict[str, Any]]:
         try:
@@ -218,7 +244,13 @@ class App:
             # 而且如果同时插着另一台可用的设备，要直接告诉用户换哪台。
             self._preflight(device)
 
+            # RSD 有两种形态，必须区分（这是 Windows 与 macOS 最大的架构差异）：
+            #  - macOS native 隧道：地址内核可路由 → 传 (host, port) 让 provider 自己连
+            #  - Windows userspace 隧道：地址只在**本进程的用户态协议栈**里可达，
+            #    直接 TCP 连接会得到 OSError [WinError 1231] 网络位置不可达 →
+            #    必须把隧道返回的那个已连接 RSD 对象本身注入给 provider
             rsd = None
+            rsd_obj = None
             if (device.ios_major or 0) >= 17:
                 if not self.tunnel.ready:
                     snapshot = self.tunnel.ensure(device.udid, allow_sudo=False)
@@ -228,8 +260,11 @@ class App:
                             "tunnel_required",
                             status=409,
                         )
-                rsd = self.tunnel.address()
+                rsd_obj = self.tunnel.rsd_object()
+                if rsd_obj is None:
+                    rsd = self.tunnel.address()
             provider = RealLocationProvider(
+                rsd=rsd_obj,
                 rsd_host=rsd[0] if rsd else None,
                 rsd_port=rsd[1] if rsd else None,
                 udid=device.udid,
@@ -264,7 +299,7 @@ class App:
             hint = f"；建议改用另一台设备：{best.name}（iOS {best.ios_version}，{best.connection.upper()}）"
         raise protocol.AppError(
             f"{device.name}（iOS {device.ios_version}）尚未挂载开发者镜像，无法做虚拟定位。"
-            f"请执行：./.venv/bin/python -m pymobiledevice3 mounter auto-mount --udid {device.udid}{hint}",
+            f"请执行：{tunnel_mod.mounter_hint(device.udid)}{hint}",
             "developer_image_missing",
             status=409,
         )
@@ -779,6 +814,8 @@ class App:
         base = getattr(sys, "_MEIPASS", None)
         if base:
             sources.append(Path(base) / "resources" / "ddi" / "personalized")
+        # 打包后 root 是可写数据目录，素材在 resources（只读包内目录）
+        sources.append(self.resources / "resources" / "ddi" / "personalized")
         sources.append(self.root / "resources" / "ddi" / "personalized")
         sources.append(Path.home() / ".ios-location-ddi" / "personalized")
 

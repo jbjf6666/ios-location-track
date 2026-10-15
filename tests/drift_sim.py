@@ -16,6 +16,7 @@ from __future__ import annotations
 import math
 import statistics
 import sys
+import tempfile
 import time
 import threading
 from pathlib import Path
@@ -81,7 +82,7 @@ def make_engine(config: config_store.ConfigStore):
 
 def main() -> int:
     print("\033[1m真实感模拟验证（GPS 漂移 + 速度浮动）\033[0m")
-    cfg = config_store.ConfigStore(Path("/tmp/iosloc-drift-sim.json"))
+    cfg = config_store.ConfigStore(Path(tempfile.gettempdir()) / "iosloc-drift-sim.json")
     cfg.update({
         "drift_enabled": True, "drift_m": 5.0,
         "speed_jitter_enabled": True, "speed_jitter": 0.10,
