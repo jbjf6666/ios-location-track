@@ -59,3 +59,4 @@ USAGE.txt text eol=crlf
 *.zip       binary
 *.plist     binary
 *.trustcache binary
+TUTORIAL-DRAW-AND-PLAY.txt text eol=crlf

@@ -16,6 +16,7 @@ The UI is a local web app opened in a Chrome / Edge app window (no address bar �
 > `dist\installer\iOSLocationTrack-1.1.0_win-setup.exe`.
 >
 > 📄 Quick-start guide (bilingual plain text, opens in Notepad): [USAGE.txt](USAGE.txt)
+> 📄 Detailed tutorial: **drawing routes, polylines & starting virtual playback**: [TUTORIAL-DRAW-AND-PLAY.txt](TUTORIAL-DRAW-AND-PLAY.txt)
 
 ---
 

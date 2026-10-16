@@ -15,6 +15,7 @@
 > `dist\installer\iOSLocationTrack-1.1.0_win-setup.exe`。
 >
 > 📄 快速上手（中英双语纯文本，可直接用记事本打开）：[USAGE.txt](USAGE.txt)
+> 📄 详细教程：**画轨迹 · 折线绘制 · 开始虚拟轨迹**：[TUTORIAL-DRAW-AND-PLAY.txt](TUTORIAL-DRAW-AND-PLAY.txt)
 
 ---
 

@@ -1,0 +1,1304 @@
+﻿================================================================================
+  画轨迹 · 折线绘制 · 开始虚拟轨迹 —— 详细教程
+  Drawing Routes, Polylines & Starting Virtual Playback — Step-by-Step Tutorial
+================================================================================
+
+  适用版本 / Version : 1.1.0
+  前置阅读 / First   : USAGE.txt（安装、启动、连接 iPhone）
+  本文件纯文本、中英双语：中文在前，英文在后。
+  英文部分从第 652 行开始（搜「PART 2」可跳转）。
+  Plain text and bilingual: Chinese first, English second.
+  English starts at line 652 (search for "PART 2" to jump there).
+
+================================================================================
+  第一部分：中文
+================================================================================
+
+--------------------------------------------------------------------------------
+  目录
+--------------------------------------------------------------------------------
+  A. 开始之前：三件事必须先做完
+  B. 认识界面：每个按钮在哪、干什么
+  C. 地图基本操作
+  D. 三种造轨迹的方式
+       D1. 折线绘制（最直接，推荐先学这个）
+       D2. 途经点 + OSRM 路线规划（最贴近真实道路）
+       D3. 导入 GPX（复用别人/别的软件画好的轨迹）
+  E. 编辑轨迹：撤销 / 删除 / 移动 / 排序
+  F. 出行模式与播放倍速
+  G. 真实感模拟参数逐个讲清楚
+  H. 开始虚拟轨迹播放
+  I. 播放过程中的控制：暂停 / 继续 / 拖进度 / 停止
+  J. 结束与恢复真实定位
+  K. 保存与复用路线
+  L. 快捷键总表
+  M. 常见问题与错误提示对照
+  N. 参数速查表
+
+
+================================================================================
+A. 开始之前：三件事必须先做完
+================================================================================
+
+  没做完这三件事，后面点「播放」一定会失败。请按顺序确认：
+
+  A1. 设备已连接
+      顶部右上角的「连接设备」按钮点过了吗？
+      点完之后，顶部中间的设备卡片会显示手机名称和 iOS 版本，
+      右上角的连接状态会从「未连接」变成已连接。
+      如果没变成，先看 USAGE.txt 的「常见问题」章节。
+
+  A2. 开发者镜像已挂载
+      iOS 17 及以上，虚拟定位依赖「开发者镜像」。
+      正常情况下点「连接设备」时会自动处理，不用你管。
+      如果日志里出现 "Failed to verify the disk image signature" 之类的报错，
+      手动点一次左下角的「挂载开发者镜像」按钮，
+      过程会实时输出到右侧「运行日志」面板。
+
+  A3. 手机放在手边，屏幕亮着
+      播放开始后，手机屏幕上会出现定位图标。
+      这是判断"到底有没有生效"最直接的证据，别把手机锁屏扔一边。
+
+  ── 做完这三件事，右侧运行日志里应该有类似这样的几行：
+       [真机] DVT 虚拟定位会话已就绪（iOS 17+ / RSD ...，长连接保持中）
+       [信息] 设备已连接：iPhone 11
+     看到「会话已就绪」就说明一切正常，可以开始画轨迹了。
+
+
+================================================================================
+B. 认识界面：每个按钮在哪、干什么
+================================================================================
+
+  界面分四块，从上到下、从左到右：
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │ 顶部工具条                                                          │
+  │   刷新设备      重新扫描 USB / 网络上的 iOS 设备                    │
+  │   连接设备      建立隧道 + 打开 DVT 定位会话（画轨迹前必须先点）    │
+  │   断开          释放会话，手机恢复真实定位                          │
+  ├──────────────┬───────────────────────────────┬──────────────────────┤
+  │ 左：轨迹设置 │ 中：地图                       │ 右：运行日志         │
+  │              │                               │                      │
+  │ 出行模式     │  ┌ 地图工具条 ─────────────┐  │ 出问题先看这里       │
+  │ 播放倍速     │  │ 选择 添加途经点 折线绘制 │  │                      │
+  │ 真实感模拟   │  │ 撤销 删除选中点 全览     │  │                      │
+  │ 路线概览     │  └─────────────────────────┘  │                      │
+  │ 途经点列表   │                               │                      │
+  │ 底图/隧道    │  ┌ 状态标签 ───────────────┐  │                      │
+  │              │  │ 未播放 进度 速度 坐标   │  │                      │
+  │ 加载 OSRM    │  └─────────────────────────┘  │                      │
+  │ 清空 导入导出│                               │                      │
+  ├──────────────┴───────────────────────────────┴──────────────────────┤
+  │ 底部播放条                                                          │
+  │   播放 暂停 继续 停止 │ 进度条 │ 已用 剩余 序号 │ 实时速度 坐标 倍速 │
+  └─────────────────────────────────────────────────────────────────────┘
+
+  记住三个最关键的位置，后面教程会反复用到：
+
+    ① 地图工具条上的「折线绘制」   —— 画轨迹的入口
+    ② 左下角的「加载 OSRM 路线」   —— 用途经点生成真实道路路线
+    ③ 底部播放条上的「播放」       —— 开始虚拟轨迹
+
+
+================================================================================
+C. 地图基本操作
+================================================================================
+
+  这些操作在**任何**绘制模式下都可用：
+
+    拖拽           按住鼠标左键拖动 → 平移地图
+    缩放           滚轮上下滚 → 放大 / 缩小
+    全览           点工具条「全览」→ 自动缩放到刚好装下整条轨迹
+    切换底图       左侧「底图」下拉框
+                   高德矢量（带标注，国内最清晰）
+                   高德卫星（含路网标注）
+                   Esri 全球卫星（英文标注，全球可用）
+                   OSM（国内可能连不上）
+    查看坐标       鼠标在地图上移动，中间状态标签的「坐标」会实时跟着变
+
+  【一个很实用的技巧】先跳到学校/目标区域，再开始画
+      左侧「快速定位到坐标」输入框，填「纬度, 经度」然后点「跳转」。
+      例如：  30.2741, 120.1551
+      注意顺序是**纬度在前、经度在后**，用英文逗号或空格分隔。
+
+      跳转**只是把地图移过去**，不会改变手机定位 —— 放心点。
+
+      常用地点可以点「记住此地」存下来，下次在下拉框里选中，点「前往」直接过去。
+
+
+================================================================================
+D. 三种造轨迹的方式
+================================================================================
+
+  你可以用下面任意一种方式得到一条轨迹。三条路都能直接播放。
+
+  ┌──────────────┬────────────────────┬──────────────────┬──────────────┐
+  │ 方式         │ 适合场景           │ 路线是否贴合道路 │ 操作量       │
+  ├──────────────┼────────────────────┼──────────────────┼──────────────┤
+  │ D1 折线绘制  │ 操场绕圈、校园小路 │ 否（走直线）     │ 最少，最快   │
+  │ D2 途经点    │ 马路跑步、真实通勤 │ 是（走真实道路） │ 中等         │
+  │ D3 导入 GPX  │ 复用现成轨迹文件   │ 取决于文件       │ 最少         │
+  └──────────────┴────────────────────┴──────────────────┴──────────────┘
+
+
+--------------------------------------------------------------------------------
+D1. 折线绘制（最直接，推荐先学这个）
+--------------------------------------------------------------------------------
+
+  这是最常用、最直观的方式：在地图上点一串点，连成一条线，然后让手机沿这条线跑。
+
+  【第 1 步】点工具条上的「折线绘制」
+      按钮会高亮，工具提示会变成：
+          「折线绘制中：点击加点，双击或 Esc 结束」
+      同时日志面板会输出：
+          [信息] 开始折线绘制：连续点击地图加点，双击或 Esc 结束
+
+      ⚠️ 注意：进入折线绘制模式后，**双击放大被自动关掉了** ——
+         因为双击要用来"结束绘制"。想放大请用滚轮。
+
+  【第 2 步】在地图上依次点击
+      每点一下，就加一个轨迹点，地图上会立刻把已画的线段用橙色连起来。
+      工具提示会实时更新成：
+          「折线绘制中：已加 7 点，双击或 Esc 结束」
+      日志里每加一个点也会记一行，带精确坐标：
+          [信息] 折线加点 7：116.397500, 39.908700
+
+      画的时候注意：
+        · 点与点之间是**直线连接**，不会自动绕开建筑物
+        · 点越密，轨迹越贴合你想要的形状；但也没必要太密，
+          直线段中间的点对最终效果没有影响
+        · 拐弯处多点几个点，弧度会更自然
+        · 操场绕圈那种场景，绕一圈点 20~40 个点就够了
+
+  【第 3 步】结束绘制
+      三种方式任选：
+        · 在最后一个点上**双击**
+        · 按 <Esc> 键
+        · 点工具条上其它任意工具（比如「选择」），会自动结束
+
+      结束后会自动做三件事：
+        1. 地图自动缩放到刚好装下整条折线
+        2. 工具自动切回「选择」模式，双击缩放恢复
+        3. 弹出提示「折线绘制完成，可直接播放或导出 GPX」
+
+      ⚠️ 如果只点了 0 个或 1 个点就结束，会提示「折线至少需要 2 个点」，
+         这条折线会被丢弃。至少要 2 个点。
+
+  【第 4 步】检查一下
+      左侧「路线概览」区域现在应该有了数字：
+          总距离        例如 2.41 km
+          路径点数      你刚才点的点数
+          途经点        0（折线模式不走途经点）
+          路线引擎      直线（因为没走 OSRM）
+      状态标签的「轨迹点」也应该显示你的点数。
+
+  ✔ 到这里折线就画好了，可以直接跳到 H 节开始播放。
+
+
+--------------------------------------------------------------------------------
+D2. 途经点 + OSRM 路线规划（最贴近真实道路）
+--------------------------------------------------------------------------------
+
+  折线走的是直线，会"穿墙过楼"。如果测试的是跑步 App，轨迹最好贴着真实马路，
+  这时候用途经点 + OSRM 路线规划。
+
+  【第 1 步】点工具条上的「添加途经点」
+      工具提示变成「添加途经点：在地图上点击添加」
+
+  【第 2 步】在地图上点选关键位置
+      不需要点很密 —— 只要点"路线要经过的地方"：
+          起点 → 第一个路口 → 拐弯处 → 途经的标志物 → 终点
+      一般 4~8 个点就够。点之间怎么走，交给 OSRM 去算。
+
+  【第 3 步】确认途经点列表
+      左侧「途经点列表」会出现你点的每一个点：
+          起    第一个点（绿色标记）
+          2     中间点
+          终    最后一个点
+      每一个点右边有按钮，鼠标移上去会显示：
+          定位到此处    把地图移到这个点
+          （还有删除按钮）
+
+  【第 4 步】点左下角的「加载 OSRM 路线」
+      这一步会**联网**请求 OSRM 路径规划服务，把点与点之间补成真实道路。
+      按钮会变成加载中状态，完成后：
+        · 地图上的直线变成贴合道路的曲线
+        · 「路线引擎」从「直线」变成「OSRM」
+        · 「路径点数」会大幅增加（几百到几千，取决于距离）
+        · 日志输出规划结果
+
+      ⚠️ 最少需要 2 个途经点，否则提示「至少需要 2 个途经点才能规划路线」。
+
+      ⚠️ OSRM 需要联网。连不上时会自动退化成直线连接，
+         路线仍然可用，只是不贴合道路。
+
+  【想调整路线怎么办】
+      调整途经点后，**必须重新点一次「加载 OSRM 路线」**，
+      否则地图上还是旧路线。
+
+  【微调途经点位置】
+      切到「选择」工具 → 在地图上**拖拽**途经点标记即可移动。
+      或者在左侧列表里**双击**某一行的坐标，直接输入精确经纬度。
+
+  【重新排序】
+      左侧途经点列表支持**拖拽排序** —— 抓住每行最左边的「⋮⋮」图标上下拖。
+      顺序变了之后同样要重新点「加载 OSRM 路线」。
+
+
+--------------------------------------------------------------------------------
+D3. 导入 GPX（复用现成轨迹）
+--------------------------------------------------------------------------------
+
+  如果你已经有一条画好的轨迹（自己以前导出的、或者从别处拿到的 GPX 文件），
+  直接导进来最省事。
+
+  【操作】
+      点左下角的「导入 GPX」→ 在弹出的文件选择框里选 .gpx 文件。
+
+      导入后，轨迹会同时填充到「途经点列表」里，你可以继续编辑。
+
+  【注意】
+      · 只支持 GPX（.gpx / .xml）
+      · 点位很多的 GPX（比如几千个点）导入后会比较卡，
+        因为每个点都会变成列表里的一行
+      · 导入的轨迹不走 OSRM 重新规划，直接按文件里的点走
+
+  【导出】
+      点「导出 GPX」把当前轨迹存成 .gpx 文件，
+      可以拿去别的软件看，或者分享给别人。
+
+
+================================================================================
+E. 编辑轨迹：撤销 / 删除 / 移动 / 排序
+================================================================================
+
+  画错了不用从头再来。
+
+  撤销
+      点工具条「撤销」，或按快捷键。每点一次回退一步。
+      折线绘制完成时会自动存一个还原点，
+      所以"画完发现不对"可以直接撤销重画。
+
+  删除单个途经点
+      切到「选择」工具 → 在地图上点一下要删的点（会高亮）→
+      点工具条「删除选中点」，或直接按 <Del> 键。
+      也可以在左侧途径点列表里点该行的删除按钮。
+
+  移动途经点
+      切到「选择」工具 → 直接**拖拽**地图上的点标记。
+
+  修改精确坐标
+      左侧「途经点列表」里**双击**某一行的坐标文字 → 输入新的经纬度。
+
+  整体清空
+      点左下角的「清空」（红色文字那个），会清掉当前轨迹的全部点和路线。
+      这个操作**不可撤销**，想留着就先「保存」（见 K 节）。
+
+  缩放查看
+      点「全览」自动适配；手工缩放用滚轮。
+
+
+================================================================================
+F. 出行模式与播放倍速
+================================================================================
+
+  【出行模式】决定了轨迹的**基础速度**，也就是"手机以多快的速度移动"。
+
+      驾车      约 13.9 m/s（50 km/h）
+      骑行      约 5.5 m/s（20 km/h）
+      步行      约 1.4 m/s（5 km/h）
+      飞行      很快（适合大跨度场景）
+
+      切换模式后，「路线概览」里的「按速度预计」会立刻更新 ——
+      那是"按这个速度跑完全程要多久"。
+
+  【两个一键预设】懒人用法：
+
+      校园跑预设    步行 1.4 m/s、下发 10Hz、漂移 4m、浮动 ±8%、不循环
+      长跑预设      骑行 5.5 m/s、下发 10Hz、漂移 6m、浮动 ±10%
+
+      点了之后上面所有参数会被一次性设好，直接可以播。
+      校园跑 / 打卡类测试直接用「校园跑预设」就行。
+
+  【播放倍速】是**回放速度**，和出行模式是两回事：
+      · 出行模式 = 手机"真实"移动多快（影响上报给 App 的速度）
+      · 播放倍速 = 你多快看完这整条轨迹
+
+      1.0x        按真实时间播（2km 步行要跑 24 分钟）
+      10x         10 倍速，2km 只要 2.4 分钟
+      0.1x ~ 50x  可调范围，指数刻度
+      默认 1.0x
+
+      ⚠️ 倍速调太高时，上报速度也会跟着变大，
+         有些 App 会认为"超出人类极限"而判定异常。
+         测跑步类 App，建议倍速不要超过 3~5x。
+
+      「路线概览」里的「按倍速播放」会显示当前倍速下大约要播多久。
+
+  【循环播放】
+      勾上「循环播放（到达终点后回到起点）」，跑到终点会自动回到起点继续，
+      适合长时间挂机测试。不勾则跑到终点自动停。
+
+
+================================================================================
+G. 真实感模拟参数逐个讲清楚
+================================================================================
+
+  这一组参数决定"轨迹看起来像不像真人跑出来的"。默认值已经比较合理，
+  刚开始可以完全不管，直接用默认值。下面解释每个参数到底在做什么。
+
+  ── G1. 定位漂移（默认勾选，半径默认 4 米）
+     现实中的 GPS 定位不是精确的点，而是在真实位置附近**缓慢游走**。
+     勾上这个，程序会让上报的坐标在设定半径内随机漂移。
+
+     半径怎么选：
+         4 米    一般手机在开阔地的水平精度，最自然，推荐
+         0 米    完全贴线走，轨迹会非常"完美"，反而假
+         10+ 米  手机信号差的环境（高楼间、树下），漂移明显
+
+     实现上是多尺度噪声（慢漂 + 中尺度 + 快抖），
+     所以漂移是**平滑游走**的，不会出现瞬间跳变。
+
+  ── G2. 速度浮动（默认勾选，幅度默认 ±8%）
+     真人跑步不可能每秒钟都精确保持同一速度。
+     勾上后，瞬时速度会在设定值上下波动。
+
+     幅度怎么选：
+         ±8%     自然的配速波动，推荐
+         ±20%+   体力不支那种忽快忽慢
+         0%      精确匀速，一眼假
+
+  ── G3. 发送节奏抖动（默认勾选）
+     真实 GPS 上报不是"精确每秒一次"，而是有细微的时间抖动，
+     偶尔还会丢一两个采样点。勾上会更真实。
+
+     一般不用动它。
+
+  ── G4. 速度由位移推算（默认勾选）
+     iOS 上报的速度不是独立字段，而是**由两个定位点之间的距离除以时间**算出来的。
+     勾上这个，程序也用同样方式推算速度，
+     保证「速度 / 位移 / 时间」三者自洽 —— 这是防作弊 App 最容易检查的地方。
+
+     建议保持勾选。
+
+  ── G5. 注入粗差跳点（默认不勾，概率默认 2%）
+     有时会故意上报一个明显偏离的坐标（比如突然跳到 30 米外），
+     下一秒又跳回来。真实 GPS 偶尔确实会这样。
+
+     这个参数的用途是**测你自己 App 的过滤逻辑**：
+     如果你的 App 应该滤掉这种跳点，就打开它，看看滤不滤得掉。
+
+     平时测试**不要开**。概率建议 2%~5%，调高了轨迹会很难看。
+
+  ── 参数组合建议
+     测校园跑 / 打卡    → 直接用「校园跑预设」，或：
+                         漂移 4m、浮动 ±8%、节奏抖动开、速度推算开、粗差关
+     测轨迹平滑算法     → 漂移调大（10~20m），看你的算法能不能平滑掉
+     测防作弊 / 过滤    → 粗差打开，概率 5%，看能不能识别
+     追求"最像真人"     → 全部保持默认即可
+
+
+================================================================================
+H. 开始虚拟轨迹播放
+================================================================================
+
+  【前置检查】播放前请确认：
+      ☑ 顶部设备卡片显示已连接，不是「未连接」
+      ☑ 右侧日志最后几行有「DVT 虚拟定位会话已就绪」
+      ☑ 地图上已经有轨迹（折线、OSRM 路线，或导入的 GPX 都行）
+      ☑ 手机上「开发者模式」已开
+      ☑ 爱思助手 / i4Tools / Xcode 等同类工具已关闭
+
+  【第 1 步】设置参数
+      按 F、G 两节的说明把「出行模式」「播放倍速」「循环播放」
+      「真实感模拟」调好。第一次用可以什么都不动，直接用默认值。
+
+  【第 2 步】(可选) 给轨迹起个名字
+      左侧「轨迹名称」输入框，填一个记得住的名字，最多 60 字。
+      方便之后保存和复用。
+
+  【第 3 步】点底部的「播放」按钮
+      也可以直接按 <空格> 键。
+
+      如果一切正常，你会看到：
+        · 底部「播放状态」从「未播放」变成正在播放
+        · 进度条开始从 0% 向右走
+        · 「已用 / 剩余」时间开始倒数
+        · 「序号」显示当前跑到第几个点，例如 137 / 4210
+        · 地图上的轨迹会被**逐段染成已播放的颜色**，
+          还有一个移动的标记跟着走
+        · 中间状态标签的「速度」「进度」「坐标」实时更新
+        · 右侧日志出现：「[信息] 开始播放：2.41 km，倍速 1.0x」
+          然后每隔一段时间输出「已下发 lat=..., lon=...（第 N 次）」
+
+      **最重要的一步**：看手机屏幕。
+      手机上的定位图标应该开始沿着你画的路线移动。
+      这是唯一能证明"真的生效了"的证据。
+
+  【第 4 步】确认手机真的动了
+      打开手机上的地图 App（高德 / 苹果地图都行），
+      看蓝点是不是在按你画的路线走。
+
+      如果手机没动，先别急着调参数，去看 M 节的排查清单。
+
+  ── 播放失败时的常见提示
+      「请先添加至少 2 个途经点，或绘制折线、加载路线」
+          → 地图上还没有轨迹。回到 D 节先画一条。
+
+      「请先连接设备」
+          → 顶部没点「连接设备」，或者会话已经断了。
+
+      「设备响应超时，请检查连接后重试」
+          → DVT 连接断了（可能被别的工具抢了）。
+            点「断开」再点「连接设备」重连，然后重新播放。
+
+
+================================================================================
+I. 播放过程中的控制
+================================================================================
+
+  全部在底部播放条上。
+
+  ── 暂停
+     点「暂停」或按 <空格>。
+     手机**停在当前位置不动**（不会恢复真实定位）。
+     进度条和序号保留。
+
+  ── 继续
+     点「继续」，从暂停的位置接着播。
+
+  ── 跳转到任意位置（seek）
+     直接**拖动进度条**到想要的位置。
+     手机定位会立刻跳到轨迹上的对应点，然后从那里继续。
+     适合"我就想测第 3 公里那一段"。
+
+  ── 停止
+     点「停止」。播放结束，**手机立刻恢复真实定位**。
+     这跟「暂停」不一样 —— 暂停是停在虚拟位置，停止是回到真实位置。
+
+  ── 播放中实时看到的数字
+     底部右侧三格：
+         实时速度     当前上报给手机的速度（m/s 或 km/h）
+         当前坐标     当前下发到手机的经纬度
+         倍速         当前播放倍速
+     中间状态标签：
+         未播放/播放中   播放状态
+         进度            百分比
+         速度            同上
+         坐标            鼠标所在位置的坐标（注意：这个跟着鼠标走，不是播放位置）
+         轨迹点          总点数
+
+  ── 播放中改参数会怎样？
+     大部分真实感参数（漂移、浮动等）在 `play.start` 时就一起下发了，
+     播放中改滑块**不会**立刻影响正在播放的这次。
+     要让它生效，停止后重新点「播放」。
+
+     播放倍速同理 —— 停止重播才会用新的倍速。
+
+
+================================================================================
+J. 结束与恢复真实定位
+================================================================================
+
+  有三种情况会让手机恢复真实定位，任何一种都可以：
+
+  1. 点底部「停止」
+  2. 点左下角的「恢复真实定位」按钮
+  3. 点顶部的「断开」，或直接关掉程序
+
+  ⚠️ 程序关闭时会自动恢复真实定位，**不会**把手机卡在虚拟位置。
+     万一遇到程序崩溃没恢复，重新打开程序点一次「恢复真实定位」即可。
+
+  ⚠️ 但有一种情况恢复不了：DVT 会话被别的工具挤断了。
+     这时候虚拟定位本身也已经失效，手机通常会自动回到真实位置。
+     如果手机还停在虚拟位置，重启一次手机就能恢复。
+
+
+================================================================================
+K. 保存与复用路线
+================================================================================
+
+  画一条满意的轨迹不容易，可以存起来反复用。
+
+  【保存到本地】
+      左侧「本地保存的路线」下拉框旁边：
+        · 点「保存」→ 当前轨迹存进浏览器 localStorage
+        · 点「载入」→ 载入下拉框里选中的那条
+        · 点「删除」→ 删掉选中的那条
+        · 也可以直接**双击**下拉框快速载入
+
+      ⚠️ 存在浏览器的 localStorage 里，所以：
+         · 换浏览器 / 清浏览器数据 / 换电脑 → 路线会丢
+         · 想长期保存请用「导出 GPX」存成文件
+
+  【导出成文件】
+      点「导出 GPX」，得到一个 .gpx 文件。
+      这是跨机器、跨软件最可靠的保存方式。
+
+  【复用流程】
+      下次打开程序 → 点「导入 GPX」选那个文件 → 直接播放。
+
+
+================================================================================
+L. 快捷键总表
+================================================================================
+
+  ┌────────────┬──────────────────────────────────────────┐
+  │ 按键       │ 作用                                     │
+  ├────────────┼──────────────────────────────────────────┤
+  │ 空格       │ 播放 / 暂停                              │
+  │ Esc        │ 结束折线绘制                             │
+  │ Del        │ 删除当前选中的途经点                     │
+  │ Backspace  │ 同上                                     │
+  │ 双击       │ 折线绘制中 = 结束绘制；其它模式 = 放大   │
+  └────────────┴──────────────────────────────────────────┘
+
+  提示：焦点在输入框里时，空格键会输入空格而不会播放。
+       点一下地图空白处再按空格。
+
+
+================================================================================
+M. 常见问题与错误提示对照
+================================================================================
+
+  ── 画轨迹相关
+
+  Q: 点「折线绘制」后点地图没反应
+     · 确认工具条上「折线绘制」是**高亮**状态
+     · 确认点的是地图区域，不是左侧面板
+     · 看日志有没有「折线加点 N」—— 有就说明点上了，只是视觉没看出来
+
+  Q: 双击想放大，结果结束了绘制
+     这是设计如此。折线绘制模式下双击 = 结束绘制，放大请用滚轮。
+     想放大又不想结束，先按 Esc 结束绘制，再双击放大。
+
+  Q: 提示「折线至少需要 2 个点」
+     你只点了 0 或 1 个点就结束了。至少点 2 个。
+
+  Q: 点「加载 OSRM 路线」没反应 / 还是直线
+     · 途经点少于 2 个
+     · 网络连不上 OSRM 服务（会自动退化成直线，日志里会有说明）
+     · 改了途经点顺序后忘了重新点这个按钮
+
+  Q: 导入 GPX 后界面很卡
+     文件点数太多（几千个），每个点都会渲染成列表的一行。
+     可以用文本编辑器把 GPX 抽稀后再导入，或者改用折线绘制。
+
+  ── 播放相关
+
+  Q: 点「播放」没反应，提示要"添加至少 2 个途经点"
+     地图上还没有轨迹。先用 D1 / D2 / D3 任意一种方式造一条。
+
+  Q: 播放了，但手机定位没动
+     按顺序排查：
+       1) 手机屏幕上有没有出现定位图标？没有 → 会话没建立，重连设备
+       2) 右侧日志有没有「已下发 lat=..., lon=...」？没有 → 播放没真正开始
+       3) 日志里最后一次下发的坐标，是不是你轨迹上的点？
+       4) 手机上的地图 App 打开看看，蓝点在不在动
+       5) 部分 App 有独立定位源（比如蓝牙 GPS），不受系统定位影响
+       6) 手机是不是被别的工具连着（爱思助手等），抢走了 DVT 连接
+
+  Q: 播到一半手机定位跳回真实位置
+     Windows 的用户态隧道偶尔会静默断开。
+        · 程序有保活：设了点但没在播放时每 15 秒重发一次
+        · 播放中断开的话，点「断开」→「连接设备」重连，再重新播放
+        · 长距离测试建议勾上「循环播放」，播放中连接更稳定
+
+  Q: 播放速度和我设的不一样
+     · 检查「播放倍速」（1.0x 才是真实时间）
+     · 检查「出行模式」—— 它决定了基础速度
+     · 「实时速度」显示的是**上报给手机的速度**，
+       和"你看到轨迹移动的快慢"（受倍速影响）是两回事
+
+  Q: 拖进度条后手机没跟着跳
+     seek 需要一点时间下发，等 1~2 秒。
+     如果一直不动，说明连接断了，重连后重试。
+
+  Q: 停止后手机定位没恢复
+     点一次左下角「恢复真实定位」。
+     还不行就点「断开」，或者重启手机（一定有效）。
+
+
+================================================================================
+N. 参数速查表
+================================================================================
+
+  ┌──────────────────────┬──────────────┬────────┬────────────────────────┐
+  │ 参数                 │ 位置         │ 默认   │ 建议                   │
+  ├──────────────────────┼──────────────┼────────┼────────────────────────┤
+  │ 出行模式             │ 左侧第一块   │ 驾车   │ 按 App 类型选；跑步选  │
+  │                      │              │        │ 步行 / 骑行            │
+  │ 播放倍速             │ 左侧         │ 1.0x   │ 跑步类 ≤ 3~5x          │
+  │ 循环播放             │ 左侧         │ 关     │ 长时间挂机测试时开     │
+  │ 定位漂移             │ 真实感模拟   │ 开 4m  │ 4m（开阔地）           │
+  │ 速度浮动             │ 真实感模拟   │ 开 ±8% │ ±8%                    │
+  │ 发送节奏抖动         │ 真实感模拟   │ 开     │ 保持开                 │
+  │ 速度由位移推算       │ 真实感模拟   │ 开     │ 保持开（防作弊关键）   │
+  │ 注入粗差跳点         │ 真实感模拟   │ 关 2%  │ 只在自己测过滤时开     │
+  │ 轨迹名称             │ 左侧         │ 空     │ 建议填，方便保存复用   │
+  └──────────────────────┴──────────────┴────────┴────────────────────────┘
+
+  首次使用的最短路径：
+      点「校园跑预设」→ 画折线 → 点「播放」。
+      三个动作就能跑起来。
+
+
+================================================================================
+  英文部分从下面开始 / English section starts below
+================================================================================
+
+
+================================================================================
+  PART 2: ENGLISH
+================================================================================
+
+--------------------------------------------------------------------------------
+  Contents
+--------------------------------------------------------------------------------
+  A. Before you start: three must-dos
+  B. UI overview: what every button does
+  C. Basic map controls
+  D. Three ways to create a route
+       D1. Polyline drawing (simplest — start here)
+       D2. Waypoints + OSRM routing (follows real roads)
+       D3. Import a GPX file
+  E. Editing a route: undo / delete / move / reorder
+  F. Travel mode and playback speed
+  G. The realism parameters, explained one by one
+  H. Starting virtual playback
+  I. Controls during playback: pause / resume / seek / stop
+  J. Finishing and restoring the real location
+  K. Saving and reusing routes
+  L. Keyboard shortcuts
+  M. Troubleshooting and error messages
+  N. Parameter quick-reference table
+
+
+================================================================================
+A. Before you start: three must-dos
+================================================================================
+
+  Skip any of these and "Play" will fail. Check them in order:
+
+  A1. The device is connected
+      Have you clicked "Connect device" (top-right)? Once it succeeds, the device
+      card in the middle of the top bar shows the phone name and iOS version, and
+      the connection pill changes from "not connected".
+      If it doesn't, see the Troubleshooting section of USAGE.txt.
+
+  A2. The developer disk image is mounted
+      On iOS 17+ virtual location depends on the developer disk image. This is
+      normally handled automatically when you click "Connect device".
+      If the log shows something like "Failed to verify the disk image signature",
+      click "Mount developer image" (bottom of the left panel) manually — progress
+      streams into the "Run log" panel on the right.
+
+  A3. The phone is next to you with the screen on
+      Once playback starts a location arrow appears on the phone. That is the most
+      direct evidence that it is actually working — don't lock it and walk away.
+
+  -- When all three are done, the run log should contain lines like:
+       [真机] DVT 虚拟定位会话已就绪（iOS 17+ / RSD ...，长连接保持中）
+       [信息] 设备已连接：iPhone 11
+     Seeing "session ready" means everything is fine. Start drawing.
+
+
+================================================================================
+B. UI overview: what every button does
+================================================================================
+
+  The window has four regions:
+
+  +---------------------------------------------------------------------+
+  | Top bar                                                             |
+  |   Refresh devices   rescan USB / network for iOS devices            |
+  |   Connect device    build the tunnel + open the DVT session         |
+  |                     (required before drawing)                       |
+  |   Disconnect        release the session, restore the real location  |
+  +--------------+-------------------------------+----------------------+
+  | LEFT         | CENTER: map                   | RIGHT: run log       |
+  | Route setup  |                               |                      |
+  |              | +- Map toolbar -------------+ | Check here first     |
+  | Travel mode  | | Select  Add waypoint      | | when anything fails  |
+  | Speed        | | Polyline                | |                      |
+  | Realism      | | Undo  Delete point  Fit | |                      |
+  | Route stats  | +---------------------------+ |                      |
+  | Waypoints    |                               |                      |
+  | Basemap      | +- Status chips -----------+ |                      |
+  |              | | idle  progress  speed   | |                      |
+  | Build OSRM   | | coords  track points    | |                      |
+  | Clear/Import | +---------------------------+ |                      |
+  +--------------+-------------------------------+----------------------+
+  | Bottom playback bar                                                 |
+  |   Play Pause Resume Stop | progress | elapsed remaining index       |
+  |   live speed | current coords | speed multiplier                    |
+  +---------------------------------------------------------------------+
+
+  Remember these three locations; the tutorial uses them constantly:
+
+    (1) "Polyline" on the map toolbar        — how you draw a route
+    (2) "Build OSRM route" (bottom-left)     — turns waypoints into real roads
+    (3) "Play" on the bottom playback bar    — starts virtual playback
+
+
+================================================================================
+C. Basic map controls
+================================================================================
+
+  These work in every drawing mode:
+
+    Pan            hold left mouse button and drag
+    Zoom           mouse wheel up / down
+    Fit            click "Fit" on the toolbar to frame the whole route
+    Basemap        "Basemap" dropdown on the left:
+                     AMap vector (with labels — clearest in China)
+                     AMap satellite (with road overlay)
+                     Esri world imagery (English labels, global)
+                     OSM (may be unreachable from mainland China)
+    Coordinates    move the mouse over the map; the "coords" chip follows it
+
+  [Very useful tip] Jump to your target area before drawing
+      Use "Jump to coordinates" in the left panel: type "latitude, longitude"
+      and click "Go". For example:  30.2741, 120.1551
+      Order is latitude first, then longitude, separated by a comma or space.
+
+      Jumping only moves the map — it does not change the phone's location,
+      so it is completely safe to click around.
+
+      Click "Remember this place" to save a spot; pick it from the dropdown and
+      click "Go" next time.
+
+
+================================================================================
+D. Three ways to create a route
+================================================================================
+
+  +--------------+--------------------+------------------+--------------+
+  | Method       | Best for           | Follows roads?   | Effort       |
+  +--------------+--------------------+------------------+--------------+
+  | D1 Polyline  | tracks, campus     | No (straight)    | Lowest       |
+  | D2 Waypoints | street running,    | Yes (real roads) | Medium       |
+  |              | real commutes      |                  |              |
+  | D3 GPX       | reusing an         | Depends on file  | Lowest       |
+  |              | existing track     |                  |              |
+  +--------------+--------------------+------------------+--------------+
+
+
+--------------------------------------------------------------------------------
+D1. Polyline drawing (simplest — start here)
+--------------------------------------------------------------------------------
+
+  The most direct method: click a series of points on the map to form a line, then
+  let the phone travel along it.
+
+  [Step 1] Click "Polyline" on the map toolbar
+      The button highlights and the hint changes to:
+          "Polyline drawing: click to add, double-click or Esc to finish"
+      The log also prints:
+          [info] start polyline: click repeatedly to add points, double-click or Esc to end
+
+      NOTE: entering polyline mode disables double-click zoom, because double-click
+      is used to finish the drawing. Use the wheel to zoom instead.
+
+  [Step 2] Click points on the map one by one
+      Every click adds a track point and the line is drawn immediately in orange.
+      The hint updates live:
+          "Polyline drawing: 7 points added, double-click or Esc to finish"
+      Each point is also logged with its exact coordinates:
+          [info] polyline point 7: 116.397500, 39.908700
+
+      While drawing:
+        - Segments are straight lines; they do not route around buildings
+        - More points = a shape that follows your intent more closely, but there is
+          no need to overdo it — extra points along a straight segment change nothing
+        - Add a few extra points at curves so the corners look natural
+        - For a loop around a track, 20-40 points is plenty
+
+  [Step 3] Finish the drawing
+      Any of these:
+        - Double-click on the last point
+        - Press <Esc>
+        - Click any other tool (e.g. "Select") — drawing ends automatically
+
+      Finishing does three things:
+        1. The map zooms to frame the whole line
+        2. The tool switches back to "Select" and double-click zoom is restored
+        3. A toast appears: "Polyline complete — you can play it or export GPX"
+
+      NOTE: with 0 or 1 points you get "a polyline needs at least 2 points" and the
+      line is discarded. Two points minimum.
+
+  [Step 4] Sanity check
+      The "Route overview" block on the left should now show numbers:
+          Total distance    e.g. 2.41 km
+          Path points       the number you just clicked
+          Waypoints         0 (polyline mode does not use waypoints)
+          Route engine      Straight line (OSRM was not used)
+      The "track points" chip should match too.
+
+  Done — you can jump straight to section H to start playback.
+
+
+--------------------------------------------------------------------------------
+D2. Waypoints + OSRM routing (follows real roads)
+--------------------------------------------------------------------------------
+
+  A polyline goes straight and will cut through buildings. If you are testing a
+  running app, the track should hug real streets — use waypoints plus OSRM.
+
+  [Step 1] Click "Add waypoint" on the map toolbar
+
+  [Step 2] Click the key positions on the map
+      You do not need many points — only the places the route must pass through:
+          start -> first junction -> the turn -> a landmark -> finish
+      Four to eight points is usually enough. OSRM fills in the path between them.
+
+  [Step 3] Check the waypoint list
+      The "Waypoint list" on the left now shows every point:
+          Start   the first point (green marker)
+          2       intermediate points
+          End     the last point
+      Hovering a row reveals its buttons: "Center here" and delete.
+
+  [Step 4] Click "Build OSRM route" (bottom-left)
+      This makes a network request to the OSRM routing service and replaces the
+      straight lines with real roads. When it finishes:
+        - The straight lines become road-following curves
+        - "Route engine" changes from "straight" to "OSRM"
+        - "Path points" jumps to hundreds or thousands
+        - The log prints the result
+
+      NOTE: at least 2 waypoints are required, otherwise you get "at least 2
+      waypoints are needed to plan a route".
+
+      NOTE: OSRM needs network access. If it is unreachable the app falls back to
+      straight lines automatically — the route still works, it just won't follow
+      roads.
+
+  [Adjusting the route]
+      After changing waypoints you MUST click "Build OSRM route" again, otherwise
+      the map still shows the old route.
+
+  [Fine-tuning waypoint positions]
+      Switch to the "Select" tool and drag the markers on the map. Or double-click a
+      row's coordinates in the left list and type exact values.
+
+  [Reordering]
+      The waypoint list supports drag-and-drop — grab the "||" handle on the left of
+      a row and move it. Reorder, then click "Build OSRM route" again.
+
+
+--------------------------------------------------------------------------------
+D3. Import a GPX file
+--------------------------------------------------------------------------------
+
+  If you already have a prepared track (something you exported earlier, or a file
+  from elsewhere), importing is the least work.
+
+  [How]
+      Click "Import GPX" (bottom-left) and choose a .gpx file.
+      The track also populates the waypoint list, so you can keep editing it.
+
+  [Notes]
+      - Only GPX (.gpx / .xml) is supported
+      - A GPX with thousands of points will feel sluggish, because every point
+        becomes a row in the list
+      - Imported tracks are not re-routed through OSRM; the file's own points are used
+
+  [Export]
+      Click "Export GPX" to save the current track as a .gpx file you can open in
+      other software or share.
+
+
+================================================================================
+E. Editing a route: undo / delete / move / reorder
+================================================================================
+
+  You do not have to start over when you make a mistake.
+
+  Undo
+      Click "Undo" on the toolbar, or use the shortcut. One step per click.
+      Finishing a polyline stores a restore point, so "drew it wrong" can simply be
+      undone.
+
+  Delete a single waypoint
+      Switch to "Select", click the point on the map to highlight it, then click
+      "Delete point" or press <Del>.
+      You can also use the delete button on the row in the left list.
+
+  Move a waypoint
+      Switch to "Select" and drag the marker on the map.
+
+  Edit exact coordinates
+      Double-click the coordinate text on a row in the waypoint list.
+
+  Clear everything
+      Click "Clear" (red text, bottom-left). This removes all points and the route.
+      It CANNOT be undone — click "Save" first if you want to keep it (section K).
+
+  Zoom to view
+      Click "Fit" to auto-frame, or use the wheel.
+
+
+================================================================================
+F. Travel mode and playback speed
+================================================================================
+
+  [Travel mode] sets the BASE speed — how fast the phone "really" moves.
+
+      Driving    ~13.9 m/s (50 km/h)
+      Cycling    ~5.5 m/s (20 km/h)
+      Walking    ~1.4 m/s (5 km/h)
+      Flight     very fast (good for long distances)
+
+      Switching mode instantly updates "Estimated at this speed" in the route
+      overview — that is how long the route takes at that speed.
+
+  [Two one-click presets]
+
+      Campus run    walking 1.4 m/s, 10 Hz, drift 4 m, jitter +-8%, no loop
+      Long run      cycling 5.5 m/s, 10 Hz, drift 6 m, jitter +-10%
+
+      Clicking one sets everything above at once. For check-in / campus-run style
+      testing, just use "Campus run".
+
+  [Playback speed] is the PLAYBACK RATE — a different thing entirely:
+      - Travel mode   = how fast the phone "really" moves (affects reported speed)
+      - Playback speed = how fast you watch the whole route
+
+      1.0x        real time (a 2 km walk takes 24 minutes)
+      10x         10x faster, so 2.4 minutes
+      0.1x - 50x  adjustable, exponential scale
+      Default 1.0x
+
+      NOTE: at high multipliers the reported speed scales up too, and some apps
+      flag that as superhuman. For running apps keep it at 3-5x or below.
+
+      "Playback at this multiplier" in the route overview shows the approximate
+      duration at the current multiplier.
+
+  [Loop]
+      Tick "Loop (return to start after the end)" and playback restarts from the
+      beginning when it reaches the end — handy for long unattended tests.
+      Leave it off and playback stops at the end.
+
+
+================================================================================
+G. The realism parameters, explained one by one
+================================================================================
+
+  These decide whether the track looks like a real person produced it. The defaults
+  are sensible; you can ignore them entirely at first.
+
+  -- G1. GPS drift (on by default, radius 4 m)
+     Real GPS is not a precise point; it wanders slowly around the true position.
+     With this on, reported coordinates drift randomly within the chosen radius.
+
+        4 m     typical phone accuracy in the open — most natural, recommended
+        0 m     perfectly on the line; looks too clean, and therefore fake
+        10+ m   poor signal (downtown, under trees)
+
+     It uses multi-scale noise (slow wander + medium + fast jitter), so the drift is
+     a smooth wander rather than sudden jumps.
+
+  -- G2. Speed jitter (on by default, +-8%)
+     A real runner cannot hold exactly the same pace every second. With this on the
+     instantaneous speed fluctuates around the set value.
+
+        +-8%    natural pace variation, recommended
+        +-20%+  visibly tiring, speeding up and slowing down
+        0%      perfectly constant — obviously synthetic
+
+  -- G3. Timing jitter (on by default)
+     Real GPS does not report exactly once per second; intervals vary slightly and
+     samples are occasionally dropped. This makes that realistic.
+
+     Usually no need to touch it.
+
+  -- G4. Derive speed from displacement (on by default)
+     iOS does not report speed as an independent field — it is computed as the
+     distance between two fixes divided by the time between them. With this on the
+     app computes speed the same way, keeping speed / displacement / time mutually
+     consistent. That is the first thing a cheat-detecting app will check.
+
+     Leave it on.
+
+  -- G5. Inject gross errors (off by default, 2% probability)
+     Occasionally reports a coordinate clearly off the line (say 30 m away) and then
+     snaps back the next second. Real GPS does this sometimes.
+
+     The purpose is to TEST YOUR OWN APP'S FILTERING: if your app is supposed to
+     discard such jumps, turn this on and see whether it does.
+
+     For normal testing keep it OFF. 2-5% is plenty; higher makes the track ugly.
+
+  -- Suggested combinations
+     Campus run / check-in  -> use the "Campus run" preset, or:
+                              drift 4 m, jitter +-8%, timing on, derive on, gross off
+     Testing smoothing      -> raise drift (10-20 m) and see if your algorithm copes
+     Testing anti-cheat     -> gross errors on at 5%, see if it gets detected
+     "Most realistic"       -> keep every default
+
+
+================================================================================
+H. Starting virtual playback
+================================================================================
+
+  [Pre-flight checklist]
+      [ ] The device card at the top shows connected, not "not connected"
+      [ ] The run log ends with "DVT session ready"
+      [ ] A route exists on the map (polyline, OSRM route or imported GPX)
+      [ ] Developer Mode is enabled on the phone
+      [ ] 3uTools / i4Tools / Xcode and similar are closed
+
+  [Step 1] Set the parameters
+      Configure travel mode, playback speed, loop and realism per sections F and G.
+      For a first run you can leave everything at its default.
+
+  [Step 2] (Optional) Name the route
+      Type a memorable name in "Route name" (max 60 characters) so it is easy to
+      save and reuse later.
+
+  [Step 3] Click "Play" on the bottom bar
+      Or just press <Space>.
+
+      If everything is fine you will see:
+        - The playback state changes from idle to playing
+        - The progress bar starts moving right from 0%
+        - Elapsed / remaining times start counting
+        - The index shows the current point, e.g. 137 / 4210
+        - The route on the map is progressively tinted as it plays, with a moving
+          marker following it
+        - The speed / progress / coords chips update live
+        - The log prints "[info] playback started: 2.41 km, speed 1.0x" and then
+          "sent lat=..., lon=... (N)" periodically
+
+      MOST IMPORTANT: look at the phone. The location arrow should start moving
+      along the route you drew. That is the only proof it actually works.
+
+  [Step 4] Confirm the phone really moves
+      Open a map app on the phone (AMap or Apple Maps) and watch the blue dot
+      travel along your route.
+
+      If the phone does not move, do not start tweaking parameters — go to the
+      troubleshooting list in section M.
+
+  -- Common failure messages
+      "Please add at least 2 waypoints, or draw a polyline, or load a route"
+          -> There is no route on the map yet. Go back to section D.
+
+      "Please connect a device first"
+          -> "Connect device" was not clicked, or the session dropped.
+
+      "Device response timed out, check the connection and retry"
+          -> The DVT connection dropped (possibly taken over by another tool).
+             Click "Disconnect", then "Connect device", then play again.
+
+
+================================================================================
+I. Controls during playback
+================================================================================
+
+  All on the bottom playback bar.
+
+  -- Pause
+     Click "Pause" or press <Space>.
+     The phone STAYS at its current virtual position (it does not restore the real
+     one). Progress and index are preserved.
+
+  -- Resume
+     Click "Resume" to continue from where you paused.
+
+  -- Seek
+     Drag the progress bar to any position. The phone jumps to the corresponding
+     point on the route and continues from there. Handy for "I only want to test
+     the third kilometre".
+
+  -- Stop
+     Click "Stop". Playback ends and the phone IMMEDIATELY returns to its real
+     location. This differs from Pause: pause leaves it at the virtual position,
+     stop restores the real one.
+
+  -- Live numbers
+     Bottom-right three cells:
+         Live speed      current speed reported to the phone (m/s or km/h)
+         Current coords  coordinates currently sent to the phone
+         Multiplier      current playback speed multiplier
+     Status chips in the middle:
+         idle / playing  playback state
+         progress        percentage
+         speed           same as live speed
+         coords          the MOUSE position, not the playback position
+         track points    total point count
+
+  -- What if I change parameters mid-playback?
+     Most realism parameters are sent with `play.start`, so moving a slider during
+     playback does NOT affect the run in progress. To apply them, stop and click
+     Play again.
+
+     The same applies to playback speed — stop and restart to use the new value.
+
+
+================================================================================
+J. Finishing and restoring the real location
+================================================================================
+
+  Any of these restores the phone's real location:
+
+  1. Click "Stop" on the bottom bar
+  2. Click "Restore real location" (bottom-left)
+  3. Click "Disconnect" at the top, or simply close the app
+
+  NOTE: closing the app restores the real location automatically — the phone is
+  never left stuck at a fake position. If the app ever crashes without restoring,
+  just reopen it and click "Restore real location".
+
+  NOTE: one case cannot be recovered — when another tool evicts the DVT session.
+  Virtual location is already dead at that point and the phone usually returns to
+  its real position by itself. If it is still stuck, restart the phone.
+
+
+================================================================================
+K. Saving and reusing routes
+================================================================================
+
+  A good route is worth keeping.
+
+  [Save locally]
+      Next to the "Saved routes" dropdown on the left:
+        - "Save"   stores the current route in browser localStorage
+        - "Load"   loads the selected entry
+        - "Delete" removes the selected entry
+        - You can also double-click the dropdown to load quickly
+
+      NOTE: this lives in the browser's localStorage, so switching browsers,
+      clearing site data, or moving to another machine loses it. For long-term
+      storage use "Export GPX" to write a file.
+
+  [Export to a file]
+      Click "Export GPX" to get a .gpx file — the most portable way to keep a route.
+
+  [Reusing]
+      Next time: "Import GPX", pick the file, hit Play.
+
+
+================================================================================
+L. Keyboard shortcuts
+================================================================================
+
+  +------------+-------------------------------------------------+
+  | Key        | Action                                          |
+  +------------+-------------------------------------------------+
+  | Space      | Play / Pause                                    |
+  | Esc        | Finish polyline drawing                         |
+  | Del        | Delete the selected waypoint                    |
+  | Backspace  | Same as Del                                     |
+  | Double-clk | In polyline mode: finish; otherwise: zoom in    |
+  +------------+-------------------------------------------------+
+
+  Tip: when the focus is inside a text input, Space types a space instead of
+  playing. Click an empty part of the map first.
+
+
+================================================================================
+M. Troubleshooting and error messages
+================================================================================
+
+  -- Drawing
+
+  Q: Clicking the map does nothing in polyline mode
+     - Make sure "Polyline" is highlighted on the toolbar
+     - Make sure you are clicking the map, not the left panel
+     - Check the log for "polyline point N" — if it is there, clicks are registering
+
+  Q: I double-clicked to zoom but it finished the drawing instead
+     That is by design. In polyline mode double-click means "finish". Use the wheel
+     to zoom, or press Esc first.
+
+  Q: "A polyline needs at least 2 points"
+     You finished with 0 or 1 points. Add at least two.
+
+  Q: "Build OSRM route" does nothing / the line stays straight
+     - Fewer than 2 waypoints
+     - OSRM is unreachable (the app falls back to straight lines and says so in
+       the log)
+     - You reordered waypoints but forgot to click the button again
+
+  Q: The UI lags after importing a GPX
+     Too many points (thousands); each one becomes a list row. Decimate the GPX in
+     a text editor, or use polyline drawing instead.
+
+  -- Playback
+
+  Q: Clicking "Play" does nothing but asks for "at least 2 waypoints"
+     There is no route on the map. Create one with D1 / D2 / D3 first.
+
+  Q: It plays but the phone's location does not move
+     Check in order:
+       1) Does a location arrow appear on the phone? No -> session is not up;
+          reconnect the device
+       2) Does the log show "sent lat=..., lon=..."? No -> playback never really
+          started
+       3) Is the last sent coordinate on your route?
+       4) Open a map app on the phone — is the blue dot moving?
+       5) Some apps use an independent location source (e.g. a Bluetooth GPS) and
+          ignore the system location
+       6) Is another tool (3uTools etc.) holding the DVT connection?
+
+  Q: Halfway through, the phone reverts to its real location
+     The Windows userspace tunnel occasionally drops silently.
+        - The app has a keepalive: when a location is set but playback is stopped,
+          it re-sends every 15 seconds
+        - If it drops mid-playback, click "Disconnect" then "Connect device", then
+          play again
+        - For long routes, enable "Loop" — the connection is more stable while
+          actively playing
+
+  Q: The playback speed is not what I set
+     - Check the playback multiplier (only 1.0x is real time)
+     - Check the travel mode — it sets the base speed
+     - "Live speed" is what is reported TO THE PHONE; how fast the track visually
+       moves is a separate thing controlled by the multiplier
+
+  Q: Dragging the progress bar does not move the phone
+     Seeking takes a moment to send — wait 1-2 seconds. If it never moves, the
+     connection is down; reconnect and retry.
+
+  Q: After Stop the phone did not restore
+     Click "Restore real location" (bottom-left). If that fails, click "Disconnect",
+     or restart the phone (always works).
+
+
+================================================================================
+N. Parameter quick-reference table
+================================================================================
+
+  +----------------------+--------------+--------+---------------------------+
+  | Parameter            | Location     | Default| Recommendation            |
+  +----------------------+--------------+--------+---------------------------+
+  | Travel mode          | left, top    | Driving| Match your app; walking  |
+  |                      |              |        | or cycling for running    |
+  | Playback multiplier  | left         | 1.0x   | <= 3-5x for running apps  |
+  | Loop                 | left         | Off    | On for long unattended    |
+  | GPS drift            | realism      | On 4 m | 4 m (open sky)            |
+  | Speed jitter         | realism      | On +-8%| +-8%                      |
+  | Timing jitter        | realism      | On     | Leave on                  |
+  | Derive speed         | realism      | On     | Leave on (anti-cheat key) |
+  | Gross errors         | realism      | Off 2% | Only when testing filters |
+  | Route name           | left         | empty  | Fill it in for reuse      |
+  +----------------------+--------------+--------+---------------------------+
+
+  Shortest path for a first run:
+      Click "Campus run preset" -> draw a polyline -> click "Play".
+      Three actions and it runs.
+
+
+================================================================================
+  链接 / Links
+================================================================================
+  仓库 / Repo      : https://github.com/jbjf6666/ios-location-track
+  使用说明         : USAGE.txt（安装 / 连接设备 / 常见问题）
+  Windows 文档     : docs/README-WINDOWS.md（中） / README-WINDOWS.en.md（英）
+  问题反馈         : https://github.com/jbjf6666/ios-location-track/issues
+
+================================================================================

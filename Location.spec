@@ -117,6 +117,7 @@ if IS_WINDOWS:
         ("resources/AppIcon.ico", "resources"),
         # 中英双语使用说明，随包一起装到安装目录，用户直接就能看（记事本友好：CRLF + BOM）
         ("USAGE.txt", "."),
+        ("TUTORIAL-DRAW-AND-PLAY.txt", "."),
         ("docs/README-WINDOWS.md", "docs") if (ROOT / "docs" / "README-WINDOWS.md").exists() else ("README.md", "docs"),
     ]
 else:
