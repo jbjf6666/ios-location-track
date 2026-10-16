@@ -15,7 +15,7 @@ The UI is a local web app opened in a Chrome / Edge app window (no address bar �
 > Build outputs: `dist\iOSLocationTrack\iOSLocationTrack.exe` and
 > `dist\installer\iOSLocationTrack-1.1.0_win-setup.exe`.
 >
-> 📄 Quick-start guide (bilingual plain text, opens in Notepad): [使用方法.txt](使用方法.txt)
+> 📄 Quick-start guide (bilingual plain text, opens in Notepad): [USAGE.txt](USAGE.txt)
 
 ---
 

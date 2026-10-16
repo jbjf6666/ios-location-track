@@ -14,7 +14,7 @@
 > 构建产物：`dist\iOSLocationTrack\iOSLocationTrack.exe` 与
 > `dist\installer\iOSLocationTrack-1.1.0_win-setup.exe`。
 >
-> 📄 快速上手（中英双语纯文本，可直接用记事本打开）：[使用方法.txt](使用方法.txt)
+> 📄 快速上手（中英双语纯文本，可直接用记事本打开）：[USAGE.txt](USAGE.txt)
 
 ---
 
